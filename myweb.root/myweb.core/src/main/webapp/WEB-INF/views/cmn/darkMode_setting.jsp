@@ -18,7 +18,7 @@
         font-weight: bold; !important;
     }
     body.dark-mode #main-content {
-        background-color: #555;
+        /* background-color: #555; */
     }
 
     /* 모든 요소에 공통 적용 - Firefox */

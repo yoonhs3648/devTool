@@ -25,8 +25,7 @@
     <!-- 스크립트 끝 -->
 
     <!-- css 시작-->
-        <!-- parser css -->
-        <link class="theme-link" rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/parser.css">
+        <link class="theme-link" rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/<tiles:getAsString name='title' ignore='true' />.css">
     <!-- css 끝 -->
 </head>
 <body>
