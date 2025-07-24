@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+        <!--Deprecated... 레디스관련 설정은 Java Config로 대체 -->
+<!--    &lt;!&ndash; Redis 연결 설정 (비밀번호는 프로퍼티에서 로드) &ndash;&gt;-->
+<!--    <bean id="redisConnectionFactory" class="org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory">-->
+<!--        <constructor-arg value="localhost"/> &lt;!&ndash; host &ndash;&gt;-->
+<!--        <constructor-arg value="6379"/>     &lt;!&ndash; port &ndash;&gt;-->
+<!--        <property name="password" value="#{T(yoon.hyeon.sang.util.PropertiesUtil).getProperty('redis.pwd')}"/>-->
+<!--    </bean>-->
+
+<!--    &lt;!&ndash; Redis Template &ndash;&gt;-->
+<!--    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">-->
+<!--        <property name="connectionFactory" ref="redisConnectionFactory"/>-->
+<!--        <property name="keySerializer">-->
+<!--            <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"/>-->
+<!--        </property>-->
+<!--        <property name="valueSerializer">-->
+<!--            <bean class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>-->
+<!--        </property>-->
+<!--    </bean>-->
+
+<!--    &lt;!&ndash; 캐시 매니저 &ndash;&gt;-->
+<!--    <bean id="cacheManager" class="org.springframework.data.redis.cache.RedisCacheManager"-->
+<!--          factory-method="builder">-->
+<!--        <constructor-arg ref="redisConnectionFactory"/>-->
+<!--    </bean>-->
+
+<!--    &lt;!&ndash; @Cacheable 사용 가능하도록 &ndash;&gt;-->
+<!--    <cache:annotation-driven cache-manager="cacheManager" proxy-target-class="true"/>-->
+
+
+</beans>

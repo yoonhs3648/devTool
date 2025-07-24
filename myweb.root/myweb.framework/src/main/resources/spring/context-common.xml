@@ -1,0 +1,22 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 서비스/DAO 클래스 컴포넌트 스캔 -->
+    <context:component-scan base-package="yoon">
+        <context:include-filter type="annotation"           expression="org.springframework.stereotype.Component" />
+        <context:include-filter type="annotation"			expression="org.springframework.stereotype.Service" />
+        <context:include-filter type="annotation"			expression="org.springframework.stereotype.Repository" />
+        <context:exclude-filter type="annotation"			expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!-- 스프링에서 제공하는 HTTP 클라이언트 -->
+    <!-- 외부 API서버와 Restful 통신을 지원하는 클래스 -->
+    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate" />
+
+</beans>

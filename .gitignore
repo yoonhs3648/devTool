@@ -1,0 +1,25 @@
+# IntelliJ 관련
+.idea/
+*.iml
+out/
+
+# 빌드 결과
+target/
+build/
+*.war
+
+# 로그파일
+*.log
+
+# 시스템 파일
+Thumbs.db
+.DS_Store
+
+# 배포 제외 폴더
+hsyoon_property/
+
+# 클래스 파일
+*.class
+
+# root 바로 하위의 웹모듈별 의존성 리스트 텍스트파일
+**/*_dependency_list.txt

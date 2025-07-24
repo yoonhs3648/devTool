@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- configuration status Level
+| 우선순위 |   레벨   |
+| 1      | `OFF`   |
+| 2      | `FATAL` |
+| 3      | `ERROR` |
+| 4      | `WARN`  |
+| 5      | `INFO`  |
+| 6      | `DEBUG` |
+| 7      | `TRACE` |
+| 8      | `ALL`   |
+-->
+<Configuration status="WARN">
+    <Appenders>
+        <!-- 콘솔 출력 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </Console>
+
+        <!-- 통합 로그 -->
+        <RollingFile name="CommonLog"
+                     fileName="${sys:catalina.base}/logs/mylogs/common.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/common-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
+        <!-- 장애 로그 -->
+        <RollingFile name="ErrorLog"
+                     fileName="${sys:catalina.base}/logs/mylogs/error.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/error-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
+        <!-- 외부 API DEBUG 로그 -->
+        <RollingFile name="ApiDebugFile"
+                     fileName="${sys:catalina.base}/logs/mylogs/api.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/api-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
+        <!-- 외부 API ERROR 로그 -->
+        <RollingFile name="ApiErrorFile"
+                     fileName="${sys:catalina.base}/logs/mylogs/api-error.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/api-error-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
+        <!-- 비동기 처리: 통합처리 -->
+        <Async name="AsyncCommon">
+            <AppenderRef ref="CommonLog"/>
+        </Async>
+
+        <!-- 비동기 처리: 에러, 콘솔 -->
+        <Async name="AsyncError">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="ErrorLog"/>
+        </Async>
+
+        <!-- 비동기 Async Appenders -->
+        <Async name="AsyncApiDebug">
+            <AppenderRef ref="ApiDebugFile"/>
+        </Async>
+
+        <Async name="AsyncApiError">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="ApiErrorFile"/>
+        </Async>
+    </Appenders>
+
+    <!-- logger name이 여러개 해당되는 로거는 가장 정확히 일치하는 이름을 우선적으로 적용 -->
+    <Loggers>
+        <!-- API 전용 로거 -->
+        <logger name="yoon.hyeon.sang" level="DEBUG" additivity="false">
+            <AppenderRef ref="AsyncApiDebug">
+                <Filters>
+                    <MarkerFilter marker="API" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+
+            <AppenderRef ref="AsyncApiError">
+                <Filters>
+                    <MarkerFilter marker="API" onMatch="NEUTRAL" onMismatch="DENY"/>
+                    <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+
+            <AppenderRef ref="AsyncCommon"/>
+
+            <AppenderRef ref="AsyncError">
+                <Filters>
+                    <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+        </logger>
+
+        <!-- 루트 Logger 설정 (Console 출력) -->
+        <!-- 어짜피 루트로거로 전파안되게 막아놈. 서버 구동시 warning 메세지 나오는거 보기싫어서 그냥 정의해놓은것-->
+        <Root level="ERROR">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
+

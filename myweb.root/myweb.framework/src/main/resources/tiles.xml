@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE tiles-definitions PUBLIC
+        "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+        "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+    <!-- definitions의 name이 여러개 해당되는 view 는 위에 있는 definitions의 영향을 받는다. (순서 중요)-->
+
+    <!-- parser 페이지 정의 -->
+    <definition name="parser/*" template="/WEB-INF/views/layout/parser_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/parser/{1}.jsp" />
+    </definition>
+
+    <definition name="translator/*" template="/WEB-INF/views/layout/translator_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/translator/{1}.jsp" />
+    </definition>
+
+    <definition name="admin/*" template="/WEB-INF/views/layout/admin_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/admin_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/admin/{1}.jsp" />
+    </definition>
+
+
+    <!-- 공통 레이아웃 정의 -->
+    <definition name="*" template="/WEB-INF/views/cmn/default_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/{1}.jsp" />
+    </definition>
+    <!-- 공통 레이아웃 정의 끝 -->
+
+</tiles-definitions>

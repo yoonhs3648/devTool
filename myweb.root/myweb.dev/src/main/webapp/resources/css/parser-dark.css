@@ -1,0 +1,80 @@
+.container {
+    display: flex;
+    flex: 1;
+    height: 100%;
+}
+
+.left {
+    width: 600px;
+    flex: none;
+    padding: 10px;
+    border-right: 1px solid #444;
+    box-sizing: border-box;
+    background-color: #2a2a2a;
+    color: #ccc;
+}
+
+.right {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    box-sizing: border-box;
+    background-color: #252525;
+    color: #ddd;
+}
+
+.result-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+/* 기본 JSON 결과 박스 */
+.result-container {
+    border: 1px solid #444;
+    min-height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: auto;
+    transition: all 0.2s ease-in-out;
+    background-color: #252525;
+    color: #e0e0e0;
+}
+
+.result-container div {
+    line-height: 1.4;
+    height: 100%;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.result-wrapper:hover .copy-btn {
+    display: block;
+}
+
+.json-key { color: #80bfff; }
+.json-string { color: #a0d6b4; }
+.json-arr-symbol { color: #b66b00; }
+.json-symbol { color: #5f9ea0; }
+.json-number { color: #ffb74d; }
+.json-boolean { color: #c792ea; }
+.json-null { color: #888; font-style: italic; }
+
+.xml-tag     { color: #80bfff; }
+.xml-attr    { color: #c792ea; }
+.xml-attrval { color: #a0d6b4; }
+.xml-text    { color: #ddd; }
+
+.xml-symbol { color: #5f9ea0; }
+.xml-toggle { cursor: pointer; }
+.xml-prefix { color: #c792ea; }
+.xml-localName { color: #80bfff; }
+.xml-attrName { color: #ffb74d; }
+.xml-attrValue { color: #c792ea; }
+.xml-textContent { color: #a0d6b4; }
+
+.error { color: #ff6666; font-weight: bold; }
