@@ -59,9 +59,10 @@
         <nav class="header-nav">
             <ul>
                 <li><a href="jsonParser">Json/Xml Parser</a></li>
-                <li><a href="translator">Translator</a></li>
-                <li><a href="encoder">Encoder/Decoder</a></li>
                 <li><a href="urlParser">UrlParser</a></li>
+                <li><a href="translator">Translator</a></li>
+                <li><a href="encrypter">Encrypter/Decrypter</a></li>
+                <li><a href="encoder">Encoder/Decoder</a></li>
             </ul>
         </nav>
     </div>

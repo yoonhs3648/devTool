@@ -49,17 +49,20 @@ public class ApiRequester {
 
         // Content-Type 설정
         String contentTypeStr = headersMap != null ? headersMap.get("Content-Type") : null;
-        MediaType contentType;
+        MediaType contentType = null;
         if (contentTypeStr != null) {
             try {
                 contentType = MediaType.parseMediaType(contentTypeStr);
             } catch (Exception e) {
                 throw new ApiException.InvalidContentType(e);   //유효하지않은 ContentType 예외처리
             }
-        } else {
-            contentType = MediaType.APPLICATION_JSON;
+        } else if (method != HttpMethod.GET) {
+            contentType = MediaType.APPLICATION_JSON;   //GET방식 이외에 요청은 application/json을 content-type을 기본값으로 설정 
         }
-        headers.setContentType(contentType);
+
+        if (contentType != null){
+            headers.setContentType(contentType);
+        }
 
         HttpEntity<?> requestEntity;
         String finalUrl = url;

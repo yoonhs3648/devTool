@@ -33,6 +33,14 @@ public class GlobalExceptionHandler {
         handleErrorWithPopup(response, request, message, ex);
     }
 
+    // 암복호화 커스텀 예외처리
+    @ExceptionHandler(UserException.CryptoException.class)
+    public void handleCryptoException(UserException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String message = ex.getMessage() != null ? ex.getMessage() : "알 수 없는 오류가 발생했습니다. yoonhs3648@gmail.com에 문의하세요";
+        logger.error(message, ex);
+        sendAlertScript(response, message);
+    }
+
     // API관련 커스텀 예외 처리
     @ExceptionHandler(ApiException.class)
     public void handleApiException(ApiException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {

@@ -27,4 +27,17 @@ public class UserException extends RuntimeException {
         public URLEncodingException(Throwable cause) { super("Failed to encode URL", cause); }
         public URLEncodingException(String message, Throwable cause) { super(message, cause); }
     }
+
+    public static class CryptoException extends UserException {
+        public CryptoException() { super("Failed to encrypt or decrypt Crypto"); }
+        public CryptoException(String message) {
+            super(message);
+        }
+        public CryptoException(Throwable cause) {
+            super("Failed to encrypt or decrypt Crypto", cause);
+        }
+        public CryptoException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

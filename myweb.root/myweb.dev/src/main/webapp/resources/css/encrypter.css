@@ -1,0 +1,107 @@
+.container {
+    display: flex;
+    flex: 1;
+    height: 100%;
+}
+
+.left {
+    width: 600px; /* 원하는 고정 너비 */
+    flex: none;    /* 비율 계산에 끼지 않음 */
+    padding: 10px;
+    border-right: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+}
+
+/* 입력 박스 */
+#crypto-wrapper {
+    width: 100%;
+}
+
+.crypto-group {
+    margin-bottom: 10px;
+}
+
+.textarea-wrapper textarea {
+    width: 100%;
+    height: 100px;
+    resize: none;
+    box-sizing: border-box;
+}
+
+.right {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+.result-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+/* 기본 JSON 결과 박스 */
+.result-container {
+    border: 1px solid #ccc;
+    min-height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: auto;
+    transition: all 0.2s ease-in-out;
+}
+
+.result-container div {
+    line-height: 1.4;      /* 모든 줄의 텍스트 높이 동일화 */
+    height: 100%;      /* 기본 최소 높이로 균일하게 */
+    box-sizing: border-box;
+    margin-bottom: 5px;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.result-item {
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.result-item:hover {
+    background-color: #59b7ff;
+}
+
+.result-kind {
+    min-width: 60px;
+    background-color: #0078d7;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 12px;
+    text-align: center;
+    user-select: none;
+    box-shadow: 0 1px 3px rgb(0 120 215 / 0.5);
+}
+
+.result-value {
+    flex-grow: 1;
+    font-size: 1.1rem;
+    color: #333;
+    word-break: break-word;
+}

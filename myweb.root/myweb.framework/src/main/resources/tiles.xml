@@ -17,6 +17,15 @@
         <put-attribute name="content" value="/WEB-INF/views/parser/{1}.jsp" />
     </definition>
 
+    <definition name="encrypter/*" template="/WEB-INF/views/layout/encrypter_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/encrypter/{1}.jsp" />
+    </definition>
+
     <definition name="translator/*" template="/WEB-INF/views/layout/translator_layout.jsp">
         <put-attribute name="title" value="{1}" />
         <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
