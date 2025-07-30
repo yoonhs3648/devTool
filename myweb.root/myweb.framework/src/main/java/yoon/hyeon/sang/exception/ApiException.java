@@ -27,4 +27,10 @@ public class ApiException extends RuntimeException {
         public ApiResponseException(Throwable cause) { super("Api Response Error", cause); }
         public ApiResponseException(String message, Throwable cause) { super(message, cause); }
     }
+
+    public static class ExpireSessionException extends ApiException {
+        public ExpireSessionException(String message) { super(message); }
+        public ExpireSessionException(Throwable cause) { super("Session is Expire", cause); }
+        public ExpireSessionException(String message, Throwable cause) { super(message, cause); }
+    }
 }

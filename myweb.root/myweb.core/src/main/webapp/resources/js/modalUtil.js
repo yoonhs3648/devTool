@@ -79,6 +79,14 @@ function ensureModalExists() {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     document.querySelector('#modalOverlay .btn-close').onclick = hideModal;
+    //overlay 클릭시 hide
+    document.getElementById('modalOverlay').addEventListener('click', e => {
+        if (e.target === e.currentTarget) hideModal();
+    });
+    //esc 누르면 hide
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') hideModal();
+    });
 }
 
 function showModal(html) {

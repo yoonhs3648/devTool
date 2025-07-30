@@ -338,7 +338,7 @@ function myFetch(input, init = {}) {
 //공통 axios 인스턴스 생성
 const myAxios = axios.create({
     //baseURL: '',  //모든 요청에 붙는 기본 경로. myAxios.get('/user')는 실제로 [baseURL값]/user 요청이 됨
-    timeout: 10000, //10초 타임아웃. 요청이 이 시간(ms)을 초과하면 자동으로 요청을 취소하고 에러 발생
+    //timeout: 10000, //10초 타임아웃. 요청이 이 시간(ms)을 초과하면 자동으로 요청을 취소하고 에러 발생
     headers: {  //요청마다 자동으로 포함되는 HTTP 헤더
         'X-Requested-With': 'XMLHttpRequest'    //서버가 이 요청이 AJAX인지 구분할 수 있게 해줌
     }

@@ -12,14 +12,155 @@
         function toggleKeyWrapper() {
             const $selectedOption = $('#algorithm option:selected');
             const showKey = $selectedOption.data('show-key') === true;
+            const showSearch = $selectedOption.val() === 'tripledes';
 
             if (showKey) {
                 $('#decrypt-key-wrapper').show();
             } else {
                 $('#decrypt-key-wrapper').hide();
             }
+
+            if (showSearch) {
+                $('#searchCustom').show();
+            } else {
+                $('#searchCustom').hide();
+            }
         }
     });
+
+    function doSearchCustom() {
+        if (!$('#customer').val().trim()) {
+            alert("고객사명을 입력하세요");
+            return;
+        }
+
+        const customer = $('#customer').val();
+        const encodedCustomer = encodeURIComponent(customer);
+
+        myAxios.get('/dev/crawl/custom', {
+            params: {
+                customerName: encodedCustomer
+            }
+        })
+        .then(res => {
+            const response = res.data;
+
+            if (response.status == "SUCCESS") {
+                const list = response.customerList;
+
+                if (!list || list.length === 0) {
+                    alert("조회된 고객사가 없습니다");
+                    return;
+                }
+
+                let customerListHTML = `
+        <style>
+            #customerTable {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: Arial, sans-serif;
+                margin-top: 10px;
+            }
+            #customerTable th, #customerTable td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: center;
+            }
+            #customerTable th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            #customerTable tr:hover {
+                background-color: #eaf4ff;
+                cursor: pointer;
+            }
+        </style>
+
+        <table id="customerTable">
+            <thead>
+                <tr>
+                    <th>MessageID</th>
+                    <th>Subject</th>
+                    <th>CategoryName</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+                list.forEach(item => {
+                    const messageId = item.MessageID || '';
+                    const subject = item.Subject || '';
+                    const category = item.CategoryName || '';
+
+                    customerListHTML += `
+            <tr onclick="getCustomInfo('\${messageId}'); hideModal();">
+                <td>\${messageId}</td>
+                <td>\${subject}</td>
+                <td>\${category}</td>
+            </tr>
+        `;
+                });
+
+                customerListHTML += `
+            </tbody>
+        </table>
+    `;
+                showModal(customerListHTML);
+
+            } else {
+                alert("사내 고객사 정보 조회에 실패했습니다");
+                return;
+            }
+        });
+    }
+
+    function getCustomInfo(messageId) {
+        myAxios.get('/dev/crawl/customInfo', {
+            params: {
+                messageID: messageId
+            }
+        })
+        .then(res => {
+            const response = res.data;
+
+            if (response.status == "SUCCESS") {
+                const list = response.customerMessageDetail;
+
+                if (!list || list.length === 0) {
+                    return;
+                }
+
+                $('#customer').val(list.Subject);
+
+                // 유니코드 디코딩
+                const unicodeDecoded = list.Body.replace(/%u([0-9A-F]{4})/gi, (_, hex) => {
+                    return String.fromCharCode(parseInt(hex, 16));
+                });
+
+                // 브라우저 기반의 디코딩을 활용
+                const tempUrlVal = new URL("http://dummy.com?hsyoon=" + unicodeDecoded);
+                const urlDecoded = tempUrlVal.searchParams.get("hsyoon");
+
+                $('#hiddenCustomerBody').val(urlDecoded);
+
+                if ($('#searchCustom button.crawl-result').length === 0) {
+                    const $btn = $('<button>')
+                        .addClass('btn crawl-result')
+                        .text('정보조회')
+                        .css('float', 'right')
+                        .attr('onclick', 'showCustomInfo()');
+                    $('#searchCustom').append($btn);
+                }
+
+            } else {
+                return;
+            }
+        })
+    }
+
+    function showCustomInfo() {
+        showModal($('#hiddenCustomerBody').val());
+    }
 
     function doCrypto() {
         if (!$('#content').val()) {
@@ -127,29 +268,36 @@
             <div>
                 <label for="algorithm" class="select-label">Algorithm
                     <select id="algorithm" class="select-inline">
-                        <option value="tripledes" data-show-key="true">TripleDesc</option>
+                        <option value="tripledes" data-show-key="true">TripleDES</option>
                         <option value="aes" data-show-key="true">AES</option>
                         <option value="engine">Engine</option>
                     </select>
                 </label>
-                <button class="btn" onclick="doCrypto()">Convert</button>
+                <button class="btn" onclick="doCrypto()">Crypto</button>
             </div>
         </div>
-        <div id="crypto-wrapper">
+        <div id="crypto-wrapper" style="margin-top: 30px;">
+            <div id="searchCustom" class="custom-search" style="display: none; margin-bottom: 20px;">
+                <span>고객사</span>
+                <label for="customer" class="text-label">
+                    <input type="text" style="width: 400px;" id="customer" name="customer" class="search-input" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); doSearchCustom(); }">
+                </label>
+                <button class="btn" onclick="doSearchCustom()">검색</button>
+            </div>
             <div id="decrypt-key-wrapper" style="display: none">
                 <div class="crypto-group">
-                    <div style="margin: 5px;">PK</div>
-                    <input type="text" id="pk" name="pk" value="1234567890ABCDEF1234567890ABCDEF">
+                    <span style="margin: 5px; display: inline-block;">PK</span>
+                    <input type="text" id="pk" name="pk">
                 </div>
                 <div class="crypto-group">
-                    <div style="margin: 5px;">IV</div>
-                    <input type="text" id="iv" name="iv" value="ABCDEF1234567890">
+                    <span style="margin: 5px; display: inline-block;">IV</span>
+                    <input type="text" id="iv" name="iv">
                 </div>
             </div>
             <div class="inputVal" style="margin-top: 20px;">
-                <div style="margin: 5px;">Content</div>
+                <span style="margin: 5px; display: inline-block;">Content</span>
                 <div class="textarea-wrapper">
-                    <textarea id="content" name="content" spellcheck="false" placeholder="내용을 입력하세요"></textarea>
+                    <textarea id="content" name="content" placeholder="내용을 입력하세요"></textarea>
                 </div>
             </div>
         </div>
@@ -162,3 +310,5 @@
         </div>
     </div>
 </div>
+
+<input type="hidden" id="hiddenCustomerBody" name="hiddenCustomerBody" />
