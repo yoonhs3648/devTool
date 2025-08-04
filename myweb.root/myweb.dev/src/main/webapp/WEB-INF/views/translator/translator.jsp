@@ -16,11 +16,11 @@
             $select.prop('disabled', isDisabled);
 
             if (isDisabled) {
-                $select.addClass('select-inline-disabled');
-                $selectLabel.addClass('select-label-disabled');
+                $select.addClass('disabled');
+                $selectLabel.addClass('disabled');
             } else {
-                $select.removeClass('select-inline-disabled');
-                $selectLabel.removeClass('select-label-disabled');
+                $select.removeClass('disabled');
+                $selectLabel.removeClass('disabled');
             }
         }
 

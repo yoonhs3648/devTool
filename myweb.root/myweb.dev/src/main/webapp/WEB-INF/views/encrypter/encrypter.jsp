@@ -159,7 +159,8 @@
     }
 
     function showCustomInfo() {
-        showModal($('#hiddenCustomerBody').val());
+        resultHtml = '<div class="html-render-wrapper">' + $('#hiddenCustomerBody').val() + '</div>'
+        showModal(resultHtml);
     }
 
     function doCrypto() {
@@ -172,6 +173,12 @@
         const showKey = $selectedOption.data('show-key') === true;
         if (showKey && (!$('#pk').val() || !$('#iv').val())) {
             alert("입력값을 확인하세요");
+            return;
+        }
+
+        //TODO 개발중
+        if ($('#algorithm').val() == 'engine') {
+            alert("엔진 crypto는 개발중입니다...");
             return;
         }
 

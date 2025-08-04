@@ -41,6 +41,13 @@
     border-radius: 4px;
 }
 
+.select-label.disabled {
+    background-color: #e0e0e0;
+    color: #aaa;
+    border-color: #ccc;
+    cursor: not-allowed;
+}
+
 .select-inline {
     padding: 8px 36px 8px 12px;
     font-size: 14px;
@@ -67,36 +74,58 @@
     min-width: 100px;  /* 최소 너비 설정 */
 }
 
-.select-inline:hover {
+select:hover {
+    cursor: pointer;
     border-color: #007bff;
 }
 
-.select-inline:focus {
+select:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.select-inline-disabled {
+select:disabled {
     background-color: #f0f0f0;
     color: #999;
     border-color: #ccc;
     cursor: not-allowed;
 }
 
-.select-label-disabled {
-    background-color: #e0e0e0;
-    color: #aaa;
-    border-color: #ccc;
-}
-
 .text-label {
-    display: inline-block;
-    padding: 6px 10px;
-    margin-top: 6px;
-    margin-bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px; /* 좌측 텍스트와 input 간 간격은 margin으로 */
+    margin: 6px 4px 6px 0;
     font-size: 14px;
     font-weight: 500;
+    color: #333;
+    user-select: none;
+}
+
+.text-label.disabled {
+    background-color: #e0e0e0;
+    border-color: #ccc;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.text-inline {
+    margin-left: 12px; /* 텍스트와 간격 */
+    border: none;
+    outline: none;
+    padding: 8px 12px;
+    color: #333;
+    background-color: #fff;
+    font-size: 14px;
+    font-family: monospace;
+    width: 200px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 0 4px 4px 0;
 }
 
 input[type="text"] {
@@ -124,6 +153,11 @@ input[type="text"]:disabled {
 }
 
 .checkbox-label {
+    user-select: none; /* 클릭시 블록잡히는걸 제거하기 위함. 모든 브라우저 지원 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
     display: inline-block;
     padding: 8px 12px;
     margin-top: 8px;
@@ -149,6 +183,11 @@ input[type="checkbox"] {
 }
 
 .radio-label {
+    user-select: none; /* 클릭시 블록잡히는걸 제거하기 위함. 모든 브라우저 지원 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+
     display: inline-block;
     align-items: center;
     margin-top: 5px;
@@ -179,6 +218,33 @@ textarea:focus {
 textarea:disabled {
     background-color: #f0f0f0;
     cursor: not-allowed;
+}
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 9999;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
 }
 
 .copy-btn {
@@ -227,4 +293,41 @@ textarea:disabled {
     vertical-align: top;
     display: inline-block;
     cursor: pointer;
+}
+
+.html-render-wrapper {
+    border: 1px solid #ccc;
+    min-height: 100%;
+    padding: 30px;
+    box-sizing: border-box;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: auto;
+    transition: all 0.2s ease-in-out;
+
+    background-image: repeating-linear-gradient(
+            45deg,
+            #f8f8f8,
+            #f8f8f8 10px,
+            #e0e0e0 10px,
+            #e0e0e0 20px
+    );
+    border-radius: 6px;
+    position: relative;
+}
+
+.html-render-wrapper > * {
+    background-color: white;
+    position: relative;
+    border-radius: 4px;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
+/* 렌더링 내부 애니메이션 제거 및 클릭 차단 */
+.html-render-wrapper * {
+    pointer-events: none;
+    animation: none !important;
+    transition: none !important;
 }

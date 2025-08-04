@@ -1,0 +1,37 @@
+.container {
+    display: flex;
+    flex: 1;
+    height: 100%;
+}
+
+.left {
+    width: 600px; /* 원하는 고정 너비 */
+    flex: none;    /* 비율 계산에 끼지 않음 */
+    padding: 10px;
+    border-right: 1px solid #ccc;
+    box-sizing: border-box;
+}
+.right {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+.result-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+.result-container {
+    border: 1px solid #ccc;
+    min-height: 100%;
+    padding: 30px;
+    box-sizing: border-box;
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: auto;
+    transition: all 0.2s ease-in-out;
+}

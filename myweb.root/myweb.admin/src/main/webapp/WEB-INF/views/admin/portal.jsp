@@ -12,6 +12,16 @@
         color: #444444;
     }
 </style>
+
+<script>
+    $(document).ready(function () {
+        var adminPageBtn = `<button id="adaminPage" class="btn" onclick="location.href='/dev/portal'">
+                                <span class="label">사용자페이지</span>
+                            </button>`
+        $('header').append(adminPageBtn);
+    })
+</script>
+
 <!-- 외부 리소스 로드 -->
 <link rel="stylesheet" href="/core/resources/css/clock.css">
 <script src="/core/resources/js/clock.js"></script>

@@ -54,13 +54,14 @@
 <header class="main-header">
   <div class="header-top-bar">
     <div class="header-logo">
-      <h1><a href="/dev/portal">hsyoon</a></h1>
+      <h1><a href="/admin/portal">ADMIN</a></h1>
     </div>
     <nav class="header-nav">
       <ul>
-        <li><a href="">test</a></li>
-        <li><a href="">test</a></li>
-        <li><a href="">test</a></li>
+        <li><a href=cache/jvm>JVM Cache Mgt</a></li>
+        <li><a href=cache/redis>Redis Cache Mgt</a></li>
+        <li><a href=#>Log Mgt</a></li>
+        <li><a href=#>System Mgt</a></li>
       </ul>
     </nav>
   </div>

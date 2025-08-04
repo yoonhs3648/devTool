@@ -1,27 +1,31 @@
 package yoon.hyeon.sang.covi.license.service.Impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import yoon.hyeon.sang.covi.license.dto.CustomerMessage;
 import yoon.hyeon.sang.covi.license.dto.CustomerMessageDetail;
-import yoon.hyeon.sang.covi.license.service.licenseCrawlSvc;
+import yoon.hyeon.sang.covi.license.service.LicenseCrawlSvc;
 import yoon.hyeon.sang.exception.ApiException;
-import yoon.hyeon.sang.translator.dto.Languages;
+import yoon.hyeon.sang.service.ControlSvc;
 import yoon.hyeon.sang.userObj.ApiResponse;
-import yoon.hyeon.sang.util.ApiRequester;
-import yoon.hyeon.sang.util.JsonConverter;
-import yoon.hyeon.sang.util.PropertiesUtil;
-import yoon.hyeon.sang.util.RedisUtil;
+import yoon.hyeon.sang.util.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
-public class licenseCrawlSvcImpl implements licenseCrawlSvc {
+public class LicenseCrawlSvcImpl implements LicenseCrawlSvc {
 
-    public static final String cookie = PropertiesUtil.getProperties("covi.license.cookie");
+    public static final String logonID = PropertiesUtil.getProperties("covi.logonID");
+    public static final String userAgent = PropertiesUtil.getProperties("user-agent");
+
+    @Autowired
+    private ControlSvc controlSvc;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public CustomerMessage getCustomerMessageId(HttpServletRequest request, String customerName) {
@@ -30,11 +34,9 @@ public class licenseCrawlSvcImpl implements licenseCrawlSvc {
 
         //헤더
         Map<String, String> headers = new HashMap<>();
-        if (!cookie.isEmpty()){
-            headers.put("cookie", cookie);
-        }
         headers.put("Content-Type", "application/x-www-form-urlencoded");
         headers.put("Accept", "application/json");
+        headers.put("User-Agent", userAgent);
 
         //바디
         Map<String, String> body = new HashMap<>();
@@ -78,6 +80,14 @@ public class licenseCrawlSvcImpl implements licenseCrawlSvc {
     public CustomerMessageDetail getCustomerMessageDetail(HttpServletRequest request, String messageID) {
         String url = "https://gw4j.covision.co.kr/groupware/board/selectMessageDetail.do";
 
+        String redisKey = "covi.cookie";
+        String cookie = "";
+        if (redisUtil.hasValue(redisKey)) {
+            cookie = (String) redisUtil.get("covi.cookie");
+        } else {
+            throw new ApiException.ExpireSessionException("세션 만료로 크롤링에 실패했습니다.");
+        }
+
         //헤더
         Map<String, String> headers = new HashMap<>();
         if (!cookie.isEmpty()){
@@ -85,6 +95,7 @@ public class licenseCrawlSvcImpl implements licenseCrawlSvc {
         }
         headers.put("Content-Type", "application/x-www-form-urlencoded");
         headers.put("Accept", "application/json");
+        headers.put("User-Agent", userAgent);
 
         //바디
         Map<String, String> body = new HashMap<>();
@@ -99,8 +110,9 @@ public class licenseCrawlSvcImpl implements licenseCrawlSvc {
             ApiResponse response = apiRequester.callApi(url, HttpMethod.POST, headers, body);
             if (response.isSuccess()) {
                 return JsonConverter.deserializeObject(response.getResponseBody(), CustomerMessageDetail.class);
-            } else if (response.getStatusCode() == 302) {
-                throw new ApiException.ExpireSessionException("세션 만료로 크롤링에 실패했습니다");
+            } else if (response.isRedirect()) {
+                controlSvc.callFido(logonID);
+                throw new ApiException.ExpireSessionException("세션 만료로 크롤링에 실패했습니다.");
             } else {
                 throw new ApiException.ApiResponseException("사내 고객사 정보 조회에 실패했습니다");
             }

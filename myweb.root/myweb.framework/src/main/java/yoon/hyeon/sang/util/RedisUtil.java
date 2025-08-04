@@ -72,6 +72,32 @@ public class RedisUtil {
         redisTemplate.expire(key, timeout);
     }
 
+    /// 모든 키 목록을 가져옴
+    public Set<String> getAllKeys() {
+        return redisTemplate.keys("*");
+    }
+
+    /// 모든 키-값 쌍을 가져옴
+    public Map<String, Object> getAllKeyValues() {
+        Set<String> keys = getAllKeys();
+        Map<String, Object> result = new java.util.HashMap<>();
+        if (keys != null) {
+            for (String key : keys) {
+                Object value = redisTemplate.opsForValue().get(key);
+                result.put(key, value);
+            }
+        }
+        return result;
+    }
+
+    /// 레디스 전체 초기화
+    public void clearAll() {
+        Set<String> keys = getAllKeys();
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
     // ---------- List ----------
     public void leftPush(String key, Object value) {
         redisTemplate.opsForList().leftPush(key, value);

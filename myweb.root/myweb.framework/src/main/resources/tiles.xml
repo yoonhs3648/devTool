@@ -17,15 +17,6 @@
         <put-attribute name="content" value="/WEB-INF/views/parser/{1}.jsp" />
     </definition>
 
-    <definition name="encrypter/*" template="/WEB-INF/views/layout/encrypter_layout.jsp">
-        <put-attribute name="title" value="{1}" />
-        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
-        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
-        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
-        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
-        <put-attribute name="content" value="/WEB-INF/views/encrypter/{1}.jsp" />
-    </definition>
-
     <definition name="translator/*" template="/WEB-INF/views/layout/translator_layout.jsp">
         <put-attribute name="title" value="{1}" />
         <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
@@ -35,15 +26,40 @@
         <put-attribute name="content" value="/WEB-INF/views/translator/{1}.jsp" />
     </definition>
 
-    <definition name="admin/*" template="/WEB-INF/views/layout/admin_layout.jsp">
+    <definition name="encrypter/*" template="/WEB-INF/views/layout/encrypter_layout.jsp">
         <put-attribute name="title" value="{1}" />
         <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
         <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/encrypter/{1}.jsp" />
+    </definition>
+
+    <definition name="htmlViewer/*" template="/WEB-INF/views/layout/parser_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/dev_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/htmlViewer/{1}.jsp" />
+    </definition>
+
+    <definition name="admin/*" template="/WEB-INF/views/layout/admin_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
         <put-attribute name="header" value="/WEB-INF/views/layout/header/admin_header.jsp" />
         <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
         <put-attribute name="content" value="/WEB-INF/views/admin/{1}.jsp" />
     </definition>
 
+    <definition name="mgt/*" template="/WEB-INF/views/layout/management_layout.jsp">
+        <put-attribute name="title" value="{1}" />
+        <put-attribute name="commonScripts" value="/WEB-INF/views/cmn/commonScripts.jsp" />
+        <put-attribute name="darkModeScripts" value="/WEB-INF/views/cmn/darkMode_setting.jsp" />
+        <put-attribute name="header" value="/WEB-INF/views/layout/header/admin_header.jsp" />
+        <put-attribute name="footer" value="/WEB-INF/views/cmn/footer.jsp" />
+        <put-attribute name="content" value="/WEB-INF/views/mgt/{1}.jsp" />
+    </definition>
 
     <!-- 공통 레이아웃 정의 -->
     <definition name="*" template="/WEB-INF/views/cmn/default_layout.jsp">

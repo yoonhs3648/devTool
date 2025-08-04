@@ -35,6 +35,18 @@ public class ApiResponse {
         return statusCode >= 200 && statusCode < 300;
     }
 
+    public boolean isRedirect() {
+        return statusCode >= 300 && statusCode < 400;
+    }
+
+    public boolean isClientError() {
+        return statusCode >= 400 && statusCode < 500;
+    }
+
+    public boolean isServerError() {
+        return statusCode >= 500 && statusCode < 600;
+    }
+
     @Override
     public String toString() {
         return "[HTTP " + statusCode + "] " + responseBody + " (in " + durationMs + "ms)";

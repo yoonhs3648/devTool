@@ -6,7 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import yoon.hyeon.sang.covi.license.dto.CustomerMessage;
 import yoon.hyeon.sang.covi.license.dto.CustomerMessageDetail;
-import yoon.hyeon.sang.covi.license.service.licenseCrawlSvc;
+import yoon.hyeon.sang.covi.license.service.LicenseCrawlSvc;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
@@ -15,10 +15,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-public class licenseCrawlCon {
+public class LicenseCrawlCon {
 
     @Autowired
-    private licenseCrawlSvc licenseCrawlSvc;
+    private LicenseCrawlSvc licenseCrawlSvc;
 
     @RequestMapping(value = "/crawl/custom", method = RequestMethod.GET)
     public @ResponseBody Map<String,Object> getCustomerMessageId(HttpServletRequest request, @RequestParam String customerName) throws UnsupportedEncodingException {

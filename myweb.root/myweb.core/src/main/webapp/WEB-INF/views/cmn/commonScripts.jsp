@@ -49,6 +49,7 @@
 <script type="text/javascript" src="/core/resources/js/common.js"></script>
 <script type="text/javascript" src="/core/resources/js/utils.js"></script>
 <script type="text/javascript" src="/core/resources/js/modalUtil.js"></script>
+<script type="text/javascript" src="/core/resources/js/dompurify.min.js"></script>
 
 <script>
     // 모든 input과 textarea에 자동완성 끄기 및 spellcheck 끄기

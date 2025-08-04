@@ -124,6 +124,7 @@ if ($connectorPortInUse -or $serverPortInUse) {
 	if ($serverPortInUse) { $allPortInfo += $serverPortInfo }
 
 	$pids = $allPortInfo | Select-Object -ExpandProperty OwningProcess -Unique
+
 	if ($pids.Count -gt 0) {
 		Write-Host "[WARN] $connectorPort 포트를 점유 중인 프로세스가 존재합니다" -ForegroundColor Yellow
 		Write-Host @"
