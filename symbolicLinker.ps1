@@ -1,6 +1,6 @@
 # ===========================
 # 1. powershell을 관리자 권한으로 실행
-# 2. link_shared.ps1에 있는 디렉토리로 이동
+# 2. symbolicLinker.ps1에 있는 디렉토리로 이동
 # 3. Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 입력 후 동의
 # 4. .\symbolicLinker.ps1 입력
 
