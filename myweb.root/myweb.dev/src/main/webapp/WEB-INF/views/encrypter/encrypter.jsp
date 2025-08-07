@@ -12,7 +12,7 @@
         function toggleKeyWrapper() {
             const $selectedOption = $('#algorithm option:selected');
             const showKey = $selectedOption.data('show-key') === true;
-            const showSearch = $selectedOption.val() === 'tripledes';
+            const showSearch = ['tripledesstr', 'tripledescsv'].includes($selectedOption.val());
 
             if (showKey) {
                 $('#decrypt-key-wrapper').show();
@@ -177,10 +177,10 @@
         }
 
         //TODO 개발중
-        if ($('#algorithm').val() == 'engine') {
-            alert("엔진 crypto는 개발중입니다...");
-            return;
-        }
+        // if ($('#algorithm').val() == 'engine') {
+        //     alert("엔진 crypto는 개발중입니다...");
+        //     return;
+        // }
 
         myAxios.post('/dev/doCrypto',
             {
@@ -275,7 +275,8 @@
             <div>
                 <label for="algorithm" class="select-label">Algorithm
                     <select id="algorithm" class="select-inline">
-                        <option value="tripledes" data-show-key="true">TripleDES</option>
+                        <option value="tripledesstr" data-show-key="true">TripleDES(PK:String)</option>
+                        <option value="tripledescsv" data-show-key="true">TripleDES(PK:CSV)</option>
                         <option value="aes" data-show-key="true">AES</option>
                         <option value="engine">Engine</option>
                     </select>
