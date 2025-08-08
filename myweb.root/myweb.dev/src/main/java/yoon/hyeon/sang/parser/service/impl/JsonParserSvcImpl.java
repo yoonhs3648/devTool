@@ -33,6 +33,7 @@ public class JsonParserSvcImpl implements JsonParserSvc {
     private int toggleIdSeq = 0;
     private final String tempRootTagName = "tempRootTag";
     private final String tempArrayTagName = "tempArrayTag";
+    private final int indentMargin = 8;
 
     @Override
     public String JsonPrettyPrint(String jsonString) {
@@ -47,13 +48,15 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                         .append(createToggleSpan(null, depth, "object", false))
                         .append("</div>");
 
-                sb.append(makeJsonHtml(root, depth, false));
+                sb.append(makeJsonHtml(root, depth + 1, false));
 
                 sb.append("<div>")
-                        .append("<span class='json-symbol'>")
-                        .append(getIndent(depth))
+                        .append("<span ")
+                        .append("class='json-symbol'>")
                         .append("}</span>")
-                        .append("</div></div>");
+                        .append("</div>");
+
+                sb.append("</div>");
             } else if (root.isArray()) {
                 sb.append("<div id='").append(++toggleIdSeq).append("'>")
                         .append("<div>")
@@ -63,10 +66,12 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                 sb.append(makeJsonHtml(root, depth + 1, false));
 
                 sb.append("<div>")
-                        .append("<span class='json-arr-symbol'>")
-                        .append(getIndent(depth))
+                        .append("<span ")
+                        .append("class='json-arr-symbol'>")
                         .append("]</span>")
-                        .append("</div></div>");
+                        .append("</div>");
+
+                sb.append("</div>");
             } else {
                 sb.append("<div class='error'>파싱 오류: 잘못된 JSON 포맷입니다</div>");
             }
@@ -95,15 +100,21 @@ public class JsonParserSvcImpl implements JsonParserSvc {
     @Override
     public String XmlPrettyPrint(String xmlString) {
         try {
+            StringBuilder sb = new StringBuilder();
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true); // 네임스페이스 인식
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new InputSource(new StringReader(xmlString)));
 
             Element root = document.getDocumentElement();
-            int depth = 0;
 
-            return makeXmlHtml(root, depth, true);
+            sb.append("<div id='")
+                    .append(toggleIdSeq)
+                    .append("'>");
+            sb.append(makeXmlHtml(root, true));
+            sb.append("</div>");
+
+            return sb.toString();
         }
         catch (Exception e) {
             String startRootTag = "<" + tempRootTagName + ">";
@@ -209,7 +220,9 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                 JsonNode value = entry.getValue();
 
                 if (value.isObject() || value.isArray()) {
-                    sb.append("<div id='").append(++toggleIdSeq).append("'>")
+                    sb.append("<div id='").append(++toggleIdSeq).append("'")
+                            .append(setMargin())
+                            .append(">")
                             .append("<div>")
                             .append(createToggleSpan(key, depth, value.isArray() ? "array" : "object", true))
                             .append("</div>")
@@ -218,10 +231,11 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                             .append("<span class='")
                             .append(value.isArray() ? "json-arr-symbol" : "json-symbol")
                             .append("'>")
-                            .append("&nbsp;").append(getIndent(depth))
                             .append(value.isArray() ? "]" : "}");
                     if (fields.hasNext()) sb.append("<span class='json-symbol'>,</span>");
-                    sb.append("</span></div></div>");
+                    sb.append("</span>");
+                    sb.append("</div>");
+                    sb.append("</div>");
                 } else if (value.isTextual()) {
                     sb.append(createValueSpan(key, "json-string", "\"" + escapeHtml(value.asText()) + "\"", fields.hasNext(), depth));
                 } else if (value.isNumber()) {
@@ -238,7 +252,9 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                 boolean isLast = (i == node.size() - 1);
 
                 if (child.isObject() || child.isArray()) {
-                    sb.append("<div id='").append(++toggleIdSeq).append("'>")
+                    sb.append("<div id='").append(++toggleIdSeq).append("'")
+                            .append(setMargin())
+                            .append("'>")
                             .append("<div>")
                             .append(createToggleSpan(null, depth, child.isArray() ? "array" : "object", false))
                             .append("</div>")
@@ -247,10 +263,11 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                             .append("<span class='")
                             .append(child.isArray() ? "json-arr-symbol" : "json-symbol")
                             .append("'>")
-                            .append(getIndent(depth))
                             .append(child.isArray() ? "]" : "}");
                     if (!isLast) sb.append("<span class='json-symbol'>,</span>");
-                    sb.append("</span></div></div>");
+                    sb.append("</span>");
+                    sb.append("</div>");
+                    sb.append("</div>");
                 } else {
                     sb.append(makeJsonHtml(child, depth, !isLast));
                 }
@@ -278,12 +295,8 @@ public class JsonParserSvcImpl implements JsonParserSvc {
 
         if (showKey && key != null) {
             sb.append("<span class='json-key'>")
-                    .append("&nbsp;")
-                    .append(getIndent(depth))
                     .append("\"").append(escapeHtml(key)).append("\"</span>")
                     .append("<span class='json-symbol'>: </span>");
-        } else {
-            sb.append(getIndent(depth));
         }
 
         sb.append("<span class='toggle' onclick='toggle(this)' data-type='").append(type)
@@ -299,10 +312,9 @@ public class JsonParserSvcImpl implements JsonParserSvc {
 
     private String createValueSpan(String key, String className, String value, boolean addComma, int depth) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<div>")
+        sb.append("<div ").append(setMargin()).append(">")
                 .append("<span class='json-key'>")
-                .append("&nbsp;").append(getIndent(depth)).append("\"")
-                .append(escapeHtml(key)).append("\"</span>")
+                .append("\"").append(escapeHtml(key)).append("\"</span>")
                 .append("<span class='json-symbol'>: </span>")
                 .append("<span class='").append(className).append("'>")
                 .append(value).append("</span>");
@@ -313,25 +325,21 @@ public class JsonParserSvcImpl implements JsonParserSvc {
 
     private String createSingleValueSpan(String className, String value, boolean addComma, int depth) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<div>")
+        sb.append("<div ").append(setMargin()).append(">")
                 .append("<span class='").append(className).append("'>")
-                .append(getIndent(depth)).append(value).append("</span>");
+                .append(value).append("</span>");
         if (addComma) sb.append("<span class='json-symbol'>,</span>");
         sb.append("</div>");
         return sb.toString();
     }
 
-    private String makeXmlHtml(Element node, int depth, boolean hasElementChild) {
+    private String makeXmlHtml(Element node, boolean hasChildElement) {
         StringBuilder sb = new StringBuilder();
-        String indent = getIndent(depth);
 
+        //region 시작 엘리먼트
         sb.append("<div>");
 
-        sb.append("<span class='xml-symbol'>")
-                .append(indent)
-                .append("</span>");
-
-        if (hasElementChild) {
+        if (hasChildElement) {
             sb.append("<span class='xml-toggle' onclick='xmlToggle(this)' data-type='tag' id='toggle_")
                     .append(++toggleIdSeq)
                     .append("'>");
@@ -373,67 +381,101 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                     .append("</span>");
         }
 
-        NodeList children = node.getChildNodes();
-        if (children.getLength() == 0) {
+        String textNode = node.getTextContent();
+
+        if (!hasChildElement) {
             sb.append("<span class='xml-symbol'>")
-                    .append(escapeHtml("/>"))
+                    .append(escapeHtml(">"))
+                    .append("</span>");
+
+            sb.append("<span class='xml-textContent'>")
+                    .append(escapeHtml(textNode))
+                    .append("</span>");
+
+            sb.append("<span class='xml-symbol'>")
+                    .append(escapeHtml("</"))
+                    .append("</span>");
+
+            sb.append("<span class='xml-localName'>")
+                    .append(escapeHtml(node.getLocalName()))
+                    .append("</span>");
+
+            sb.append("<span class='xml-symbol'>")
+                    .append(escapeHtml(">"))
                     .append("</span>");
 
             sb.append("</span>");
             sb.append("</div>");
             return sb.toString();
-        } else {
-            sb.append("<span class='xml-symbol'>")
-                    .append(escapeHtml(">"))
-                    .append("</span>");
         }
-        sb.append("</span>");
-
-        if (hasElementChild) {
-            sb.append("</div>");
-
-            sb.append("<div style='display: none;' id='hide_")
-                    .append(toggleIdSeq)
-                    .append("'>");
-            sb.append("<span class='xml-symbol'>")
-                    .append(indent)
-                    .append("</span>");
-            sb.append("<span class='xml-symbol' id='collapsed_")
-                    .append(toggleIdSeq)
-                    .append("'>")
-                    .append("</span>");
-            sb.append("</div>");
-
-            sb.append("<div id='")
-                    .append(toggleIdSeq)
-                    .append("'>");
-        }
-
-        //자식노드 순회
-        sb.append(makeChildNode(node, depth, hasElementChild));
-
-        sb.append("</div>");
-
-        if(!hasElementChild){
-            return sb.toString();
-        }
-
-        sb.append("<div>");
 
         sb.append("<span class='xml-symbol'>")
-                .append(indent)
+                .append(escapeHtml(">"))
                 .append("</span>");
+
+        sb.append("</span>");
+        sb.append("</div>");
+
+        sb.append("<div style='display: none;' id='hide_")
+                .append(toggleIdSeq)
+                .append("'>");
+
+        sb.append("<span class='xml-symbol' id='collapsed_")
+                .append(toggleIdSeq)
+                .append("'>")
+                .append("</span>");
+
+        sb.append("</div>");
+        //endregion
+
+        //region 자식 엘리먼트
+        sb.append("<div id='")
+                .append(toggleIdSeq)
+                .append("' ")
+                .append(setMargin())
+                .append(">");
+
+        //자식엘리먼트 순회
+        for (int i=0; i<node.getChildNodes().getLength(); i++) {
+            Node child = node.getChildNodes().item(i);
+
+            if(child.getNodeType() == Node.ELEMENT_NODE) {
+
+                //손자노드 중 엘리먼트 태그가 있는지 확인
+                boolean hasElementGrandchild = false;
+                for (int j = 0; j < child.getChildNodes().getLength(); j++) {
+                    Node grandChild = child.getChildNodes().item(j);
+                    if (grandChild.getNodeType() == Node.ELEMENT_NODE) {
+                        hasElementGrandchild = true;
+                        break;
+                    }
+                }
+
+                Element childElement = (Element) child;
+                sb.append(makeXmlHtml(childElement, hasElementGrandchild));
+            } else if (child.getNodeType() == Node.TEXT_NODE || child.getNodeType() == Node.CDATA_SECTION_NODE) {
+                String childText = child.getTextContent();
+                if (!childText.trim().isEmpty()) {
+                    sb.append("<div>");
+
+                    sb.append("<span class='xml-textContent'>")
+                            .append(escapeHtml(childText))
+                            .append("</span>");
+
+                    sb.append("</div>");
+                }
+            }
+        }
+
+        sb.append("</div>");
+        //endregion
+
+        //region 끝 엘리먼트
+        sb.append("<div>");
 
         sb.append("<span class='xml-symbol'>")
                 .append(escapeHtml("</"))
                 .append("</span>");
-
-        if (prefix != null) {
-            sb.append("<span class='xml-prefix'>")
-                    .append(escapeHtml(prefix))
-                    .append(":")
-                    .append("</span>");
-        }
 
         sb.append("<span class='xml-localName'>")
                 .append(escapeHtml(node.getLocalName()))
@@ -444,79 +486,7 @@ public class JsonParserSvcImpl implements JsonParserSvc {
                 .append("</span>");
 
         sb.append("</div>");
-
-        return sb.toString();
-    }
-
-    private String makeChildNode(Element node, int depth, boolean hasElementChild){
-
-        StringBuilder sb = new StringBuilder();
-
-        NodeList children = node.getChildNodes();
-        String indent = getIndent(depth);
-        String prefix = node.getPrefix();
-
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-
-            if (child.getNodeType() == Node.ELEMENT_NODE) {
-                NodeList grandChildren = child.getChildNodes();
-
-                //손자노드 중 엘리먼트 태그가 있는지 확인
-                boolean hasElementGrandchild = false;
-                for (int j = 0; j < grandChildren.getLength(); j++) {
-                    Node grandChild = grandChildren.item(j);
-                    if (grandChild.getNodeType() == Node.ELEMENT_NODE) {
-                        hasElementGrandchild = true;
-                        break;
-                    }
-                }
-
-                sb.append(makeXmlHtml((Element) child, depth + 1, hasElementGrandchild));
-            } else if (child.getNodeType() == Node.TEXT_NODE || child.getNodeType() == Node.CDATA_SECTION_NODE) {
-                String text = child.getTextContent();
-                if (StringUtils.isNotBlank(text)) {
-
-                    if (hasElementChild) {
-                        sb.append("<div>");
-
-                        sb.append("<span class='xml-symbol'>")
-                                .append(indent)
-                                .append("&nbsp;&nbsp;&nbsp")
-                                .append("</span>");
-
-                        sb.append("<span class='xml-textContent'>")
-                                .append(escapeHtml(text))
-                                .append("</span>");
-
-                        sb.append("</div>");
-                    } else {
-                        sb.append("<span class='xml-textContent'>")
-                                .append(escapeHtml(text))
-                                .append("</span>");
-
-                        sb.append("<span class='xml-symbol'>")
-                                .append(escapeHtml("</"))
-                                .append("</span>");
-
-                        if (prefix != null) {
-                            sb.append("<span class='xml-prefix'>")
-                                    .append(escapeHtml(prefix))
-                                    .append(":")
-                                    .append("</span>");
-                        }
-
-                        sb.append("<span class='xml-localName'>")
-                                .append(escapeHtml(node.getLocalName()))
-                                .append("</span>");
-
-                        sb.append("<span class='xml-symbol'>")
-                                .append(escapeHtml(">"))
-                                .append("</span>");
-                    }
-                }
-            }
-        }
+        //endregion
 
         return sb.toString();
     }
@@ -527,6 +497,10 @@ public class JsonParserSvcImpl implements JsonParserSvc {
             sb.append("&nbsp;&nbsp;&nbsp");
         }
         return sb.toString();
+    }
+
+    private String setMargin() {
+        return " style=\"margin-left: 30px;\" ";
     }
 
     private String escapeHtml(String input) {

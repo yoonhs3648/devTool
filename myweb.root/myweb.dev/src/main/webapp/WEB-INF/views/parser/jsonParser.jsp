@@ -2,6 +2,34 @@
 <%@ page import="java.util.*" %>
 
 <script>
+    $(document).ready(function () {
+        const $checkbox = $('#indentLine');
+
+        $checkbox.on('change', showIndentLine);
+        showIndentLine();    // 초기 설정
+    })
+
+    function showIndentLine() {
+        const $checkbox = $('#indentLine');
+        const isShow = $checkbox.is(':checked');
+
+        $('#parsedJson')
+            .find('div') // 모든 하위 div
+            .filter(function () {
+                const id = $(this).attr('id');
+                return /^\d+$/.test(id); // id가 숫자인 것만 필터
+            })
+            .each(function () {
+                const id = $(this).attr('id');
+                if (isShow) {
+                    const hue = (parseInt(id, 10) * 37) % 360;
+                    $(this).css('border-left', `1px dotted hsla(\${hue}, 30%, 50%, 1.0)`);
+                } else {
+                    $(this).css('border-left', '');
+                }
+            });
+    }
+
     function makeJsonSample() {
         const jsonSample = `{"user":{"id":101,"name":"홍길동","profile":{"contact":{"email":"hong@example.com","phone":null,"social":{"kakao":"hong123","github":"gildong","tags":[["dev","coder"],["blogger","writer",["nested1","nested2"]],null]}},"preferences":{"theme":"dark","language":"ko","notification":{"email":true,"sms":false,"push":{"enabled":true,"schedules":[[{"day":"Mon","time":"08:00"},{"day":"Fri","time":"18:00"}],[{"day":"Wed","time":"12:00"},null]]}}}}},"system":{"env":"production","meta":{"version":"6.0","timestamp":1718700000000,"history":{"created":{"at":"2023-12-01T12:00:00Z","by":{"id":"admin","roles":["creator",["superuser","owner"],null]}},"updated":{"at":null,"by":{"id":"editor","roles":[["moderator"],"reviewer"]}}}}}}`;
 
@@ -34,6 +62,8 @@
                     $('.result-container').css('white-space', 'nowrap');    //prettyprint는 줄바꿈안함
                     $("#parsedJson").html(data);
                 }
+
+                showIndentLine();
             },
             error: function(response, status, error){
                 $("#parsedJson").html(`<div class='error'>오류 발생: [${status}]:: ${response}\n${error}</div>`);
@@ -191,6 +221,10 @@
 <div class="container">
     <div class="left">
         <span style="float:right">
+            <label for="indentLine" class="checkbox-label">
+                <input type="checkbox" id="indentLine" value="indentLine" checked>
+                indent Line
+            </label>
             <label for="kind" class="select-label">Choose Option
             <select id="kind" class="select-inline">
                 <option value="JPP">JSON Pretty Print</option>

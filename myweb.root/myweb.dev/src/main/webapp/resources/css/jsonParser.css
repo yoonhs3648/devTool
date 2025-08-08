@@ -28,7 +28,7 @@
 .result-container {
     border: 1px solid #ccc;
     min-height: 100%;
-    padding: 10px;
+    padding: 10px 10px 10px 20px;
     box-sizing: border-box;
     font-family: Consolas, 'Courier New', monospace;
     font-size: 14px;
