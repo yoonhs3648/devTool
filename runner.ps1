@@ -13,6 +13,14 @@ $modules = @{
 #============================================================================================
 
 #============================================================================================
+#==========톰캣버전 (7) ===============================================================
+#$TOMCAT_VERSION = "7"
+$TOMCAT_VERSION = "9"
+#============================================================================================
+#============================================================================================
+
+
+#============================================================================================
 # 각 웹모듈의 pom.xml에 있는 모듈의존성 추출을 위한 groupID
 $GROUP_ID = "yoon.hyeonsang"	#com.covision
 #============================================================================================
@@ -53,9 +61,10 @@ Write-Host ""
 Write-Host "[INFO] 사용자 입력 환경변수" -ForegroundColor Cyan
 Write-Host "connectorPort번호 : $connectorPort" -ForegroundColor Cyan
 Write-Host "serverPort번호 : $serverPort" -ForegroundColor Cyan
-Write-Host "Covi_property(DDEPLOY_PATH)경로 : $DDEPLOY_PATH" -ForegroundColor Cyan
+Write-Host "property파일(DDEPLOY_PATH)경로 : $DDEPLOY_PATH" -ForegroundColor Cyan
 Write-Host "MAVEN_PATH경로 : $MAVEN_PATH" -ForegroundColor Cyan
-Write-Host "고객사 메이븐 세팅xml 경로 : $SETTINGS_XML_PATH" -ForegroundColor Cyan
+Write-Host "메이븐 세팅xml 경로 : $SETTINGS_XML_PATH" -ForegroundColor Cyan
+Write-Host "톰캣 버전 : $TOMCAT_VERSION" -ForegroundColor Cyan
 Write-Host "톰캣 경로 : $TOMCAT_PATH" -ForegroundColor Cyan
 Write-Host "WORKSPACE_PATH 경로 : $WORKSPACE_PATH" -ForegroundColor Cyan
 Write-Host "CATALINA_HOME 경로 : $TOMCAT_PATH" -ForegroundColor Cyan
@@ -225,114 +234,144 @@ Write-Host "[INFO] tomcat 구성 준비를 시작합니다" -ForegroundColor Cya
 
 # ===== Catalina/localhost 디렉토리 초기화 및 생성 =====
 if (Test-Path $contextPath) {
-	Write-Host "[INFO] Tomcat의 configuration 경로가 존재합니다: $contextPath" -ForegroundColor Cyan
-	#Remove-Item -Path "$contextPath\*" -Recurse -Force
+    Write-Host "[INFO] Tomcat의 configuration 경로가 존재합니다: $contextPath" -ForegroundColor Cyan
+    #Remove-Item -Path "$contextPath\*" -Recurse -Force
 } else {
-	Write-Host "[INFO] Tomcat의 configuration 경로를 생성합니다: $contextPath" -ForegroundColor Cyan
-	New-Item -ItemType Directory -Path $contextPath -Force | Out-Null
+    Write-Host "[INFO] Tomcat의 configuration 경로를 생성합니다: $contextPath" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $contextPath -Force | Out-Null
 }
 
 $moduleDependencies = @()
 Write-Host "[INFO] 웹모듈 단위로 context.xml 생성중..." -ForegroundColor Cyan
 
 foreach ($module in $modules.Keys) {
-	$ctxName = $modules[$module]
-	$ctxFile = "$contextPath\$ctxName.xml"
-	$docBasePath = "$WORKSPACE_PATH\$module\src\main\webapp"
-	$preResourcesPath = "$WORKSPACE_PATH\$module\target\classes"
-	$postResourcesPath = ""
-	$preResourcesXml = ""
+    $ctxName = $modules[$module]
+    $ctxFile = "$contextPath\$ctxName.xml"
+    $docBasePath = "$WORKSPACE_PATH\$module\src\main\webapp"
+    $preResourcesPath = "$WORKSPACE_PATH\$module\target\classes"
+    $postResourcesPath = ""
+    $preResourcesXml = ""
 
-	Write-Host ""
-	Write-Host "[INFO] $ctxName 의 context.xml를 생성합니다. -> $ctxName.xml" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "[INFO] $ctxName 의 context.xml를 생성합니다. -> $ctxName.xml" -ForegroundColor Cyan
 
-	#각 웹모듈의 pom.xml을 동적으로 읽어서 프로젝트 내 jar 의존성 (framework 또는 resources) 추출
-	$modulePath = "$WORKSPACE_PATH\$module\pom.xml"
-	if (Test-Path $modulePath) {
-		[xml]$pomXml = Get-Content $modulePath -Raw -Encoding UTF8
-		$dependencies = $pomXml.project.dependencies.dependency
+    #각 웹모듈의 pom.xml을 동적으로 읽어서 프로젝트 내 jar 의존성 (framework 또는 resources) 추출
+    $modulePath = "$WORKSPACE_PATH\$module\pom.xml"
+    if (Test-Path $modulePath) {
+        [xml]$pomXml = Get-Content $modulePath -Raw -Encoding UTF8
+        $dependencies = $pomXml.project.dependencies.dependency
 
-		foreach ($dependency in $dependencies) {
-			if ($dependency.groupId -eq $GROUP_ID){
-				$artifactId = $dependency.artifactId
+        foreach ($dependency in $dependencies) {
+            if ($dependency.groupId -eq $GROUP_ID){
+                $artifactId = $dependency.artifactId
 
-				#실시간 배포를 위해 변수에 추가
-				$moduleDependencies += $artifactId
+                #실시간 배포를 위해 변수에 추가
+                $moduleDependencies += $artifactId
 
-				$classPath = "$WORKSPACE_PATH\$artifactId\target\classes"
-				$preResourcesXml += "		<PreResources base=`"$classPath`" className=`"org.apache.catalina.webresources.DirResourceSet`" webAppMount=`"/WEB-INF/classes`" />`r`n"
-			}
-		}
-	} else {
-		Write-Host "[ERROR] $modulePath 를 찾을 수 없습니다" -ForegroundColor Red
-		Write-Host "runner.ps1 실행을 종료합니다..." -ForegroundColor Red
-		Write-Host " Made By hsyoon" -ForegroundColor Magenta
-		exit 1
-	}
+                $classPath = "$WORKSPACE_PATH\$artifactId\target\classes"
+                $preResourcesXml += "		<PreResources base=`"$classPath`" className=`"org.apache.catalina.webresources.DirResourceSet`" webAppMount=`"/WEB-INF/classes`" />`r`n"
+            }
+        }
+    } else {
+        Write-Host "[ERROR] $modulePath 를 찾을 수 없습니다" -ForegroundColor Red
+        Write-Host "runner.ps1 실행을 종료합니다..." -ForegroundColor Red
+        Write-Host " Made By hsyoon" -ForegroundColor Magenta
+        exit 1
+    }
 
-	if (Test-Path $ctxFile) {
-		#TODO: context.xml을 만드는건 시간이 다소 오래걸리는 작업이여서 파일이 이미 존재할 경우 스킵한다. 만약 메이븐 의존성의 변경이 있으면 각 웹모듈의 context.xml을 삭제해야 새로 만들어진다
-		Write-Host "[INFO] $ctxName 의 context.xml 파일이 이미 존재합니다 /$ctxName -> $ctxFile" -ForegroundColor Cyan
-		#Remove-Item -Path $ctxFile -Force
-		continue
-	}
+    if (Test-Path $ctxFile) {
+        #TODO: context.xml을 만드는건 시간이 다소 오래걸리는 작업이여서 파일이 이미 존재할 경우 스킵한다. 만약 메이븐 의존성의 변경이 있으면 각 웹모듈의 context.xml을 삭제해야 새로 만들어진다
+        Write-Host "[INFO] $ctxName 의 context.xml 파일이 이미 존재합니다 /$ctxName -> $ctxFile" -ForegroundColor Cyan
+        #Remove-Item -Path $ctxFile -Force
+        continue
+    }
 
-	Push-Location $WORKSPACE_PATH
-	# Maven 명령 실행 결과를 파일로 저장
-	$outputFile = "${ctxName}_dependency_list.txt"
-	mvn dependency:list -DoutputAbsoluteArtifactFilename=true `
+    Push-Location $WORKSPACE_PATH
+    # Maven 명령 실행 결과를 파일로 저장
+    $outputFile = "${ctxName}_dependency_list.txt"
+    mvn dependency:list -DoutputAbsoluteArtifactFilename=true `
     -pl $module `
     -s $SETTINGS_XML_PATH `
     > $outputFile
 
-	# 확인 로그
-	if (Test-Path $outputFile) {
-		Write-Host "[INFO] $ctxName Maven 의존성 리스트 파일: $WORKSPACE_PATH\$outputFile" -ForegroundColor Cyan
-	} else {
-		Write-Host "[ERROR] Maven dependency 조회에 실패했습니다: $module" -ForegroundColor Red
-		Write-Host "[ERROR] runner.ps1 실행을 종료합니다..." -ForegroundColor Red
-		Write-Host " Made By hsyoon" -ForegroundColor Magenta
-		exit 1
-	}
+    # 확인 로그
+    if (Test-Path $outputFile) {
+        Write-Host "[INFO] $ctxName Maven 의존성 리스트 파일: $WORKSPACE_PATH\$outputFile" -ForegroundColor Cyan
+    } else {
+        Write-Host "[ERROR] Maven dependency 조회에 실패했습니다: $module" -ForegroundColor Red
+        Write-Host "[ERROR] runner.ps1 실행을 종료합니다..." -ForegroundColor Red
+        Write-Host " Made By hsyoon" -ForegroundColor Magenta
+        exit 1
+    }
 
-	# 결과 파일에서 .jar 경로를 읽어서 PostResources 태그 생성
-	Get-Content $outputFile | Where-Object { $_ -match ".*\.jar" } | ForEach-Object {
-		if ($_ -match "([A-Z]:\\[^:]+\.jar)") {
-			$jarFullPath = $matches[1]
-			$jarName = [System.IO.Path]::GetFileName($jarFullPath)
+    # 결과 파일에서 .jar 경로를 읽어서 PostResources 태그 생성
+    Get-Content $outputFile | Where-Object { $_ -match ".*\.jar" } | ForEach-Object {
+        if ($_ -match "([A-Z]:\\[^:]+\.jar)") {
+            $jarFullPath = $matches[1]
+            $jarName = [System.IO.Path]::GetFileName($jarFullPath)
 
-			# framework는 실시간 배포를 위해 PreResources로 등록하고 PostResources에서 필터링한다
-			if ($jarName -match "^(.+?)-[\d\.]+\.jar$") {
-				$moduleName = $matches[1]
+            # framework는 실시간 배포를 위해 PreResources로 등록하고 PostResources에서 필터링한다
+            if ($jarName -match "^(.+?)-[\d\.]+\.jar$") {
+                $moduleName = $matches[1]
 
-				# 이미 PreResources에 등록된 모듈이면 건너뜀
-				if ($moduleDependencies -contains $moduleName) {
-					return
-				}
-			}
+                # 이미 PreResources에 등록된 모듈이면 건너뜀
+                if ($moduleDependencies -contains $moduleName) {
+                    return
+                }
+            }
 
-			$webAppMount = "/WEB-INF/lib/$jarName"
+            $webAppMount = "/WEB-INF/lib/$jarName"
 
-			# PostResources 한 줄 추가
-			$postResourcesPath += "        <PostResources base=`"$jarFullPath`" className=`"org.apache.catalina.webresources.FileResourceSet`" webAppMount=`"$webAppMount`" />`r`n"
-		}
-	}
+            # PostResources 한 줄 추가
+            $postResourcesPath += "        <PostResources base=`"$jarFullPath`" className=`"org.apache.catalina.webresources.FileResourceSet`" webAppMount=`"$webAppMount`" />`r`n"
+        }
+    }
 
-	# ===== hot deploy를 지원하는 웹모듈별 context.xml 내용 생성 =====
-	$contextContent = @"
+    # ===== 톰캣 버전에 따른 분기 처리 =====
+    if ($TOMCAT_VERSION -eq "7") {
+        Write-Host "[INFO] 톰캣7.0 감지: VirtualWebappLoader 방식 적용" -ForegroundColor Yellow
+
+        $virtualClasspath = "$preResourcesPath"
+        Get-Content $outputFile | Where-Object { $_ -match ".*\.jar" } | ForEach-Object {
+            if ($_ -match "([A-Z]:\\[^:]+\.jar)") {
+                $jarFullPath = $matches[1]
+                $jarName = [System.IO.Path]::GetFileName($jarFullPath)
+
+                if ($jarName -match "^(.+?)-[\d\.]+\.jar$") {
+                    $moduleName = $matches[1]
+                    if ($moduleDependencies -contains $moduleName) {
+                        return
+                    }
+                }
+
+                $virtualClasspath += ";$jarFullPath"
+            }
+        }
+
+        $contextContent = @"
+<Context docBase="$docBasePath" reloadable="true">
+    <Loader className="org.apache.catalina.loader.VirtualWebappLoader"
+            virtualClasspath="$virtualClasspath" />
+</Context>
+"@
+    } else {
+        # 톰캣9.0 및 기타: 기존 방식 유지
+        $contextContent = @"
 <Context docBase="$docBasePath" reloadable="true">
 	<Resources>
 		<PreResources base="$preResourcesPath" className="org.apache.catalina.webresources.DirResourceSet" webAppMount="/WEB-INF/classes" />
 $preResourcesXml
-$postResourcesPath
+        $postResourcesPath
 	</Resources>
 </Context>
 "@
+    }
 
-	# ===== context.xml파일 생성 =====
-	$contextContent | Set-Content -Encoding UTF8 $ctxFile
-	Write-Host "[INFO] 웹모듈의 context.xml 생성을 성공했습니다: /$ctxName -> $ctxFile" -ForegroundColor Cyan
+    # ===== context.xml파일 생성 =====
+    $contextContent | Set-Content -Encoding UTF8 $ctxFile
+    Write-Host "[INFO] 웹모듈의 context.xml 생성을 성공했습니다: /$ctxName -> $ctxFile" -ForegroundColor Cyan
 }
+
 
 # ===== jar 모듈 컴파일 =====
 $moduleDependencies = $moduleDependencies | Select-Object -Unique	# 중복되는 의존성 처리
@@ -748,18 +787,14 @@ Write-Host @"
 ＼　　ヽ　　　　i　　|　　　　 /　　　/　
 　　　＼　
 톰켓을 시작합니다...
-Made by hsyoon
-
-　　　　　　　　　　　　　　;' ':;,　　 　　　 ,;'':;,
-　　　　　　　　　　　　　;'　　 ':;,.,..,,,;'　　　';,
-　　ー　　　　　　　　 ,:'　　　　　　　　 　　　　::::::::､
-　_＿　　　　　　　　,:' ／ 　 　　　　＼ 　　　　　::::::::',
-　　　　　二　　　　:'　 ●　　　　　 ●　 　　　　　　::::::::i.
-　　￣　　　　　　　i　'''　(_人__)　　''''　　 ::::::::::i
-　　　　-‐　　　　　 :　 　　　　　　　　　 　　　　　::::::::i
-　　　　　　　　　　　`:,､ 　　　　　 　 　　　 :::::::::: /
-　　　　／　　　　　　 ,:'　　　　　　　 : ::::::::::::｀:､
-　　　　　　　　　　　 ,:'　　　　　　　　 : : ::::::::::｀:､
+ _
+| |
+| |__   ___  _   _   ___    ___   _ __      ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+| '_ \ / __|| | | | / _ \  / _ \ | '_ \     █░░░░░░░░▀█▄▀▄▀██████░▀█▄▀▄▀██████░
+| | | |\__ \| |_| || (_) || (_) || | | |    ░░░░░░░░░░░▀█▄█▄███▀░░░ ▀██▄█▄███▀░
+|_| |_||___/ \__, | \___/  \___/ |_| |_|
+              __/ |
+             |___/
 "@ -ForegroundColor Green
 Write-Host " Made By hsyoon" -ForegroundColor Magenta
 Write-Host ""

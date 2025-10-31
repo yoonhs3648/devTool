@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.annotation.RequestScope;
 import org.w3c.dom.*;
 import yoon.hyeon.sang.parser.service.JsonParserSvc;
 
@@ -27,6 +28,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 @Service
+@RequestScope
 public class JsonParserSvcImpl implements JsonParserSvc {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -109,7 +111,7 @@ public class JsonParserSvcImpl implements JsonParserSvc {
             Element root = document.getDocumentElement();
 
             sb.append("<div id='")
-                    .append(toggleIdSeq)
+                    .append(++toggleIdSeq)
                     .append("'>");
             sb.append(makeXmlHtml(root, true));
             sb.append("</div>");

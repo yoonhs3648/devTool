@@ -28,33 +28,11 @@
                 }
             }
 
-            // html += `
-            //     <div class="urlElement" onclick="copyContent(this)">
-            //         <div class="urlElement-name">전체 URL</div>
-            //         <div class="urlElement-content">\${url.href}</div>
-            //     </div>`;
-
-            // if (hasProtocol) {
-            //     html += `
-            //     <div class="urlElement" onclick="copyContent(this)">
-            //         <div class="urlElement-name">프로토콜</div>
-            //         <div class="urlElement-content">\${url.protocol}</div>
-            //     </div>`;
-            // }
-
             html += `
                 <div class="urlElement" onclick="copyContent(this)">
                     <div class="urlElement-name">호스트</div>
                     <div class="urlElement-content">\${url.host}</div>
                 </div>`;
-
-            // if (url.port) {     //http, https 는 포트번호가 안나옴
-            //     html += `
-            //     <div class="urlElement" onclick="copyContent(this)">
-            //         <div class="urlElement-name">포트</div>
-            //         <div class="urlElement-content">\${url.port}</div>
-            //     </div>`;
-            // }
 
             if (url.pathname) {
                 html += `
@@ -71,22 +49,6 @@
                     <div class="urlElement-content">\${url.pathname.substring(url.pathname.lastIndexOf('/') + 1)}</div>
                 </div>`;
             }
-
-            // if (url.search) {
-            //     html += `
-            //     <div class="urlElement" onclick="copyContent(this)">
-            //         <div class="urlElement-name">쿼리스트링</div>
-            //         <div class="urlElement-content">\${url.search}</div>
-            //     </div>`;
-            // }
-
-            // if (url.hash) {
-            //     html += `
-            //     <div class="urlElement" onclick="copyContent(this)">
-            //         <div class="urlElement-name">해쉬</div>
-            //         <div class="urlElement-content">\${url.hash}</div>
-            //     </div>`;
-            // }
 
             if (Object.keys(params).length > 0) {
                 html += '<br>';

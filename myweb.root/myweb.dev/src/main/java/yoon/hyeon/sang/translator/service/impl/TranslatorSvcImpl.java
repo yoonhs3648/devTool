@@ -102,8 +102,7 @@ public class TranslatorSvcImpl implements TranslatorSvc {
             try {
                 ApiResponse response = apiRequester.callApi(url, HttpMethod.POST, headers, body);
                 if (response.isSuccess()) {
-                    TranslateResponse translate = JsonConverter.deserializeObject(response.getResponseBody(),
-                            new TypeReference<TranslateResponse>() {});
+                    TranslateResponse translate = JsonConverter.deserializeObject(response.getResponseBody(), TranslateResponse.class);
                     for (TranslateResponse.Translations data : translate.getTranslations()) {
                         data.setTargetLang(targetLang);
                     }

@@ -331,3 +331,183 @@ textarea:disabled {
     animation: none !important;
     transition: none !important;
 }
+
+/* hsla */
+.hsla-controller {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.slider-group {
+    margin: 10px 0;
+}
+.slider-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    border-radius: 4px;
+    outline: none;
+    background: transparent;
+    position: relative;
+}
+
+/* 공통 thumb 스타일 */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid #fff;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    margin-top: -3px;
+}
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+    height: 10px;
+    border-radius: 4px;
+}
+
+/* 채도 슬라이더 배경 (왼쪽 회색, 오른쪽 순색) */
+.saturation-slider::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+    hsl(0, 0%, 50%),     /* 채도 0% (회색) */
+    hsl(0, 100%, 50%)    /* 채도 100% (진한 빨강) */
+    );
+}
+.saturation-slider::-moz-range-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+    hsl(0, 0%, 50%),
+    hsl(0, 100%, 50%)
+    );
+}
+
+/* 명도 슬라이더 배경 (왼쪽 검정, 중앙 순색, 오른쪽 흰색) */
+.lightness-slider::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+    hsl(0, 0%, 0%),      /* 어두움 */
+    hsl(0, 0%, 50%),     /* 중간 회색 */
+    hsl(0, 0%, 100%)     /* 밝음 */
+    );
+}
+.lightness-slider::-moz-range-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+    hsl(0, 0%, 0%),
+    hsl(0, 0%, 50%),
+    hsl(0, 0%, 100%)
+    );
+}
+
+/* 투명도 슬라이더 배경 (투명에서 불투명으로) */
+.alpha-slider {
+    -webkit-appearance: none; /* Chrome/Safari */
+    appearance: none; /* 기본 */
+    width: 100%;
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1)); /* 투명 → 검정 */
+    outline: none;
+    cursor: pointer;
+}
+
+.alpha-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid #fff;
+    cursor: pointer;
+    margin-top: -3px; /* track 중앙 정렬 */
+    position: relative;
+    z-index: 2;
+}
+
+.alpha-slider::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1));
+}
+
+/* Firefox */
+.alpha-slider::-moz-range-track {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1));
+}
+
+.alpha-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
+
+/* Border 두께 슬라이더 */
+.border-slider {
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    --track-height: 1px; /* 기본값 지정 */
+}
+
+/* Webkit (Chrome, Edge, Safari) */
+.border-slider::-webkit-slider-runnable-track {
+    border-radius: 4px;
+    background-color: #ccc;
+    height: var(--track-height);
+    transition: height 0.2s ease;
+}
+.border-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 2px solid #fff;
+    cursor: pointer;
+    position: relative;
+    margin-top: -6px; /* 트랙 두께 변화에 맞춰 중앙정렬 */
+}
+
+/* Firefox */
+.border-slider::-moz-range-track {
+    border-radius: 4px;
+    background-color: #ccc;
+    height: 4px;
+    transition: height 0.2s ease;
+}
+.border-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #254f73;
+    border: 2px solid #888;
+    cursor: pointer;
+}

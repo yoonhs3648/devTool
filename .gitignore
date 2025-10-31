@@ -16,7 +16,7 @@ Thumbs.db
 .DS_Store
 
 # 배포 제외 폴더
-hsyoon_property/
+#hsyoon_property/
 
 # 클래스 파일
 *.class

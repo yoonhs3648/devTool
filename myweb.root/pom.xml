@@ -44,12 +44,91 @@
     </dependencyManagement>
 
     <dependencies>
+
+        <!-- Tomcat7.0 VS Tomcat9.0 시작 -->
+
         <!-- Spring Web MVC -->
+        <!-- Spring5.3.x는 Servlet3.1이상, Tomcat8 이상 필수 -->
+        <!-- Tomcat7은 Spring 4.3.30 이하 버전 사용 -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
             <version>5.3.33</version>
         </dependency>
+        <!--<dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>4.3.30.RELEASE</version>
+        </dependency>-->
+
+        <!-- Servlet API (provided로 지정) -->
+        <!-- Servlet4.0.x 은 톰캣8.5이상 필수 -->
+        <!-- Tomcat7은 Servlet3.0 까지만 지원 -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <!--<dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.0.1</version>
+            <scope>provided</scope>
+        </dependency>-->
+
+        <!-- Spring Redis -->
+        <!-- spring-data-redis2.7.x 는 Spring 5.3.x 기반. Tomcat9 과 간접적으로 호환 -->
+        <!-- Tomcat7dms spring-data-redis1.x버전 지원-->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>2.7.6</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>1.8.23.RELEASE</version>
+        </dependency>-->
+        <!-- Redis End-->
+
+        <!-- Redis -->
+        <!-- Redis 클라이언트: Lettuce -->
+        <!-- Lettuce6.x는 Spring 4.x 기반 RedisTemplate과 호환되지 않음 -->
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>6.1.8.RELEASE</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>5.3.7.RELEASE</version>
+        </dependency>-->
+
+        <!-- Jackson 2.17은 Spring 4.x와 호환되지 않을수 있음-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>2.9.10</version>
+        </dependency>-->
+
+        <!-- Tomcat7.0 VS Tomcat9.0 끝 -->
 
         <!-- JSP 지원을 위한 JSTL -->
         <dependency>
@@ -58,30 +137,10 @@
             <version>1.2</version>
         </dependency>
 
-        <!-- Servlet API (provided로 지정) -->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>4.0.1</version>
-            <scope>provided</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.12.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-            <version>2.17.0</version>
         </dependency>
 
         <!-- Apache Tiles 3 -->
@@ -147,21 +206,6 @@
         </dependency>
         <!-- log4j End -->
 
-        <!-- Redis -->
-        <!-- Redis 클라이언트: Lettuce -->
-        <dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
-            <version>6.1.8.RELEASE</version>
-        </dependency>
-
-        <!-- Spring Redis -->
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-redis</artifactId>
-            <version>2.7.6</version>
-        </dependency>
-        <!-- Redis End-->
     </dependencies>
 
     <build>

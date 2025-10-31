@@ -8,7 +8,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class MainCon {
     @RequestMapping(value = "/portal", method = RequestMethod.GET)
-    public ModelAndView goMainPage(){
+    public ModelAndView goMainPage(){   
         String returnURL = "admin/portal";
         ModelAndView mv = new ModelAndView();
         mv.setViewName(returnURL);
