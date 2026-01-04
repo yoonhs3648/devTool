@@ -85,6 +85,24 @@
         }
     }
 
+    function showLeftContainer(el) {
+        var $left = $("#leftContainer");
+
+        if ($left.hasClass("hidden-slide-left")) {
+            $left.css("display", "block");
+            setTimeout(function() {
+                $left.removeClass("hidden-slide-left");
+            }, 10);
+            $(el).text("<");
+        } else {
+            $left.addClass("hidden-slide-left");
+            $(el).text(">");
+            setTimeout(function() {
+                $left.css("display", "none");
+            }, 300);
+        }
+    }
+
     function showIndentLine() {
         const $checkbox = $('#indentLine');
         const isShow = $checkbox.is(':checked');
@@ -135,7 +153,7 @@
     }
 
     function makeJsonSample() {
-        const jsonSample = `{"user":{"id":101,"name":"홍길동","profile":{"contact":{"email":"hong@example.com","phone":null,"social":{"kakao":"hong123","github":"gildong","tags":[["dev","coder"],["blogger","writer",["nested1","nested2"]],null]}},"preferences":{"theme":"dark","language":"ko","notification":{"email":true,"sms":false,"push":{"enabled":true,"schedules":[[{"day":"Mon","time":"08:00"},{"day":"Fri","time":"18:00"}],[{"day":"Wed","time":"12:00"},null]]}}}}},"system":{"env":"production","meta":{"version":"6.0","timestamp":1718700000000,"history":{"created":{"at":"2023-12-01T12:00:00Z","by":{"id":"admin","roles":["creator",["superuser","owner"],null]}},"updated":{"at":null,"by":{"id":"editor","roles":[["moderator"],"reviewer"]}}}}}}`;
+        const jsonSample = `{\"scalars\":{\"IV_MODE\":\"C\"},\"structures\":{\"IS_HEADER\":{\"BUKRS\":\"1000\",\"BUDAT\":\"20240115\",\"BLART\":\"SA\",\"WAERS\":\"KRW\",\"GWUID\":\"GW-20241201\"}},\"tables\":{\"IT_ITEM\":[{\"DOC_NO\":\"0001\",\"BUZEI\":\"001\",\"SHKZG\":\"S\",\"HKONT\":\"111100\",\"WRBTR\":\"100000\",\"SGTXT\":\"차변 테스트\"},{\"DOC_NO\":\"0001\",\"BUZEI\":\"002\",\"SHKZG\":\"H\",\"HKONT\":\"210000\",\"WRBTR\":\"100000\",\"SGTXT\":\"대변 테스트\"}]}}`;
 
         $("#inputString").val(jsonSample);
     }
@@ -428,9 +446,9 @@
 </script>
 
 <div class="container">
-    <div class="left">
+    <div class="left" id="leftContainer">
         <div>
-            <span style="float:right">
+            <span style="float: right;">
                 <label for="indentLine" class="checkbox-label">
                     <input type="checkbox" id="indentLine" value="indentLine" checked>
                     indent Line
@@ -451,11 +469,11 @@
         </div>
         <div>
             <span>
-                <button class="btn" onclick="makeJsonSample()">JSON Sample</button>
-                <button class="btn" onclick="makeXMLSample()">XML Sample</button>
+                <button class="btn" onclick="makeJsonSample()" style="display: none;">JSON Sample</button>
+                <button class="btn" onclick="makeXMLSample()" style="display: none;">XML Sample</button>
             </span>
         </div>
-        <div class="hsla-controller" id="hslaController">
+        <div class="hsla-controller" id="hslaController" style="margin-top: 10px;">
             <div>
                 <span>SLA 설정</span>
             </div>
@@ -512,6 +530,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="middle">
+        <button class='hide-btn' style="width:15px;" onclick="showLeftContainer(this)"><</button>
     </div>
     <div class="right" id="result">
         <div class="copy-success-message" id="copy-success-message">✅ 복사 완료</div>

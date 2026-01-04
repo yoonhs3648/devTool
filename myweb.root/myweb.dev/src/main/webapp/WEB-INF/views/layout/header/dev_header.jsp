@@ -63,7 +63,7 @@
                 <li><a href="translator">Translator</a></li>
                 <li><a href="encrypter">Encrypter/Decrypter</a></li>
                 <li><a href="htmlViewer">HTML Viewer</a></li>
-                <li><a href="encoder">Encoder/Decoder</a></li>
+                <li><a href="sap">SAP RFC Call</a></li>
             </ul>
         </nav>
     </div>

@@ -207,6 +207,12 @@ input[type="radio"] {
     transform: translateY(1px);
 }
 
+input::placeholder {
+    color: #444444;        /* 글자 색상 */
+    font-style: italic;  /* 이탤릭체 */
+    font-size: 10px;
+}
+
 textarea {
     width: 100%;
     height: 630px;

@@ -64,6 +64,92 @@
     height: 100%;
 }
 
+/* 파라미터 박스 */
+.outer-box {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+.middle-box {
+    display: none;
+    background-color: #f7f7f7;
+    border-radius: 6px;
+    padding: 5px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.table-box {
+    border:1px solid #cfcfcf;
+    padding:10px;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+}
+.inner-box {
+    background-color: #f9f9f9;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    margin: 10px;
+    padding: 5px;
+}
+.section-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #222222;
+}
+.section-header .btn {
+    position: absolute;
+    right: 0;
+}
+.section-header span {
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #222222;
+}
+.section-header span::after {
+    content: '▶';
+    font-size: 0.7em;
+    line-height: 1;
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+    color: #555555;
+}
+.section-header span.open::after {
+    transform: rotate(90deg) translateY(-1px);
+}
+.box-title {
+    margin-bottom: 10px;
+    padding: 5px;
+    color: #333333;
+}
+.paramType {
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+    height: 36px;
+    font-size: 10px;
+    padding: 6px 10px;
+    color: #444444;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    resize: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+/* 파라미터 박스 끝 */
+
 /* 기본 JSON 결과 박스 */
 .result-container {
     border: 1px solid #ccc;

@@ -40,4 +40,17 @@ public class UserException extends RuntimeException {
             super(message, cause);
         }
     }
+
+    public static class SAPException extends UserException {
+        public SAPException() { super("SAP Exception"); }
+        public SAPException(String message) {
+            super(message);
+        }
+        public SAPException(Throwable cause) {
+            super("SAP Exception", cause);
+        }
+        public SAPException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

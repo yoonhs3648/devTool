@@ -244,14 +244,31 @@ function myFetch(input, init = {}) {
       {
         userId: 123,
         name: '홍길동'
+      },
+      {
+        beforeSend: function () {
+            showSpinner("요청 직후 실행되는 로직...");
+        },
+        complete: function () {
+            alert("응답 직후 성공응답, 실패응답, 네트워크에러, 서버스크립트에러 모두 실행되는 로직");
+        }
       }
     )
     .then(res => {
-      console.log(res.data.message);      //"처리 완료"
-      console.log(res.data.data.name);    //"홍길동"
+      const data = res.data;   // ← 핵심
+
+      console.log(data.message);      //"처리 완료"
+      console.log(data.data.name);    //"홍길동"
     })
     .catch(error => {
-      console.error('에러 발생:', error);
+      const response = error.response;
+      const status   = response ? response.status : null;
+      const errMsg   = error.message;
+
+      $("#parsedJson").html(`<div class='error'>오류 발생: [${status}] ${errMsg}</div>`);
+    })
+    .finally(() => {
+      hideSpinner();
     });
 
     //서버
@@ -334,6 +351,17 @@ function myFetch(input, init = {}) {
     }
 */
 
+/*
+beforeSend()  // request interceptor
+   ↓
+[서버 응답]
+   ↓
+complete()    // response interceptor
+   ↓
+.then()
+   ↓
+.finally()
+ */
 
 //공통 axios 인스턴스 생성
 const myAxios = axios.create({
@@ -350,6 +378,11 @@ myAxios.interceptors.request.use(
         //이 함수에서 config.headers, config.data, config.method 등을 수정 가능
         // 예시: config.headers['Authorization'] = 'Bearer my-token';
 
+        //beforeSend : 요청 직후 요청진행중에 관한 작업
+        if (typeof config.beforeSend === 'function') {
+            config.beforeSend();
+        }
+
         return config;
     },
     function (error) {
@@ -361,6 +394,11 @@ myAxios.interceptors.request.use(
 // 응답 인터셉터: 모든 응답 후 실행됨(공통 에러 처리, 스크립트 응답 실행)
 myAxios.interceptors.response.use(
     function (response) {
+        // complete : 성공응답을 받은 직후 작업
+        if (response.config && typeof response.config.complete === 'function') {
+            response.config.complete();
+        }
+
         const contentType = response.headers['content-type'] || '';
         const text = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
 
@@ -378,6 +416,11 @@ myAxios.interceptors.response.use(
         return response;
     },
     function (error) {
+        // complete : 실패응답 또는  네트워크에러, 서버스크립트에러 등을 받은 직후 작업
+        if (error.config && typeof error.config.complete === 'function') {
+            error.config.complete();
+        }
+
         let message = "알 수 없는 오류가 발생했습니다.";
         let trace = "";
         const response = error.response;

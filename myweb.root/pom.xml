@@ -206,6 +206,16 @@
         </dependency>
         <!-- log4j End -->
 
+        <!-- sap -->
+        <dependency>
+            <groupId>com.sap.conn.jco</groupId>
+            <artifactId>sapjco</artifactId>
+            <version>3.0.7</version>
+            <scope>system</scope>
+            <systemPath>C:/IntelliJProj/devProj/mavenRepository/com/sap/conn/jco/sapjco/3.0.7/sapjco-3.0.7.jar</systemPath>
+        </dependency>
+        <!-- sap end -->
+
     </dependencies>
 
     <build>
