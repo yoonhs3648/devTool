@@ -53,4 +53,15 @@ public class UserException extends RuntimeException {
             super(message, cause);
         }
     }
+
+    public static class FileException extends UserException {
+        public FileException() { super("File Exception"); }
+        public FileException(String message) { super(message); }
+        public FileException(Throwable cause) {
+            super("File Exception", cause);
+        }
+        public FileException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }

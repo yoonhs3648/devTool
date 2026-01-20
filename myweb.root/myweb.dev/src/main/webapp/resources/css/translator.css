@@ -128,3 +128,8 @@
     color: #333;
     word-break: break-word;
 }
+
+.file-upload.drag-over {
+    border: 2px dashed #4a90e2;
+    background-color: #f3f8ff;
+}

@@ -143,13 +143,8 @@ public class SapJcoUtil {
         return fields;
     }
 
-
-
-
-
-
-    /// 전처리 . be Deprecated
-    public static JCoFunction prepareRfcFunction(JCoDestination destination, String functionName, Map<String, Object> importParams, Map<String, List<Map<String, Object>>> tableParams) throws JCoException {
+    /// RFC function 전처리
+    public static JCoFunction prepareRfcFunction(JCoDestination destination, String functionName, List<Map<String, Object>> importParams, List<Map<String, Object>> tableParams) throws JCoException {
         JCoRepository repo = destination.getRepository();
         repo.clear();
         JCoFunction function = repo.getFunction(functionName);
@@ -165,16 +160,43 @@ public class SapJcoUtil {
 
             //필수 파라미터 누락 체크는 execute 전에 체크하는 기능을 제공하지않음. 이 케이스는 RFC Call하고 예외 반환
 
-            //불필요한 파라미터 존재 체크
-            for (String key : importParams.keySet()) {
-                if (!meta.hasField(key)) {
-                    throw new UserException.SAPException("정의되지 않은 Import 파라미터: " + key);
-                }
-            }
+            for (Map<String, Object> param : importParams) {
+                String dataType = (String) param.get("dataType");
 
-            //Import 파라미터 값 할당
-            for (String key : importParams.keySet()) {
-                importList.setValue(key, importParams.get(key));
+                //스칼라 파라미터
+                if ("STRING".equals(dataType)) {
+                    String key = (String) param.get("key");
+
+                    if (!meta.hasField(key)) {
+                        throw new UserException.SAPException("정의되지 않은 Import 파라미터: " + key);
+                    }
+
+                    importList.setValue(key, param.get("value"));
+                }
+
+                //STRUCTURE 파라미터
+                else if ("STRUCTURE".equals(dataType)) {
+                    String structName = (String) param.get("name");
+
+                    if (!meta.hasField(structName)) {
+                        throw new UserException.SAPException("정의되지 않은 Import 구조체: " + structName);
+                    }
+
+                    JCoStructure structure = importList.getStructure(structName);
+                    if (structure == null) {
+                        throw new UserException.SAPException("구조체 파라미터 아님: " + structName);
+                    }
+
+                    List<Map<String, Object>> fields = (List<Map<String, Object>>) param.get("fields");
+                    for (Map<String, Object> field : fields) {
+                        String fieldName = (String) field.get("key");
+                        if (!structure.getMetaData().hasField(fieldName)) {
+                            throw new UserException.SAPException("정의되지 않은 STRUCTURE 필드: " + structName + "." + fieldName);
+                        }
+
+                        structure.setValue(fieldName, field.get("value"));
+                    }
+                }
             }
         }
 
@@ -185,36 +207,29 @@ public class SapJcoUtil {
             JCoMetaData tableMeta = tableList.getMetaData();
 
             //필수 파라미터 누락 체크는 execute 전에 체크하는 기능을 제공하지않음. 이 케이스는 RFC Call하고 예외 반환
+            for (Map<String, Object> tableParam : tableParams) {
+                String tableName = (String) tableParam.get("name");
 
-            //불필요한 파라미터 존재 체크
-            for (String tableName : tableParams.keySet()) {
                 if (!tableMeta.hasField(tableName)) {
                     throw new UserException.SAPException("정의되지 않은 Table 파라미터: " + tableName);
                 }
-            }
-
-            //TABLE파라미터 값 할당 및 TABLE파라미터 내 컬럼 검증
-            for (Map.Entry<String, List<Map<String, Object>>> tableEntry : tableParams.entrySet()) {
-
-                String tableName = tableEntry.getKey();
-                List<Map<String, Object>> rows = tableEntry.getValue();
 
                 JCoTable jcoTable = tableList.getTable(tableName);
                 JCoMetaData rowMeta = jcoTable.getMetaData();
 
+                List<Map<String, Object>> rows = (List<Map<String, Object>>) tableParam.get("rows");
+
                 for (Map<String, Object> row : rows) {
-
-                    //TABLE 파라미터 내 컬럼 검증
-                    for (String colName : row.keySet()) {
-                        if (!rowMeta.hasField(colName)) {
-                            throw new UserException.SAPException("Table [" + tableName + "] 에 정의되지 않은 컬럼: " + colName);
-                        }
-                    }
-
-                    //TABLE 파라미터 값 할당
                     jcoTable.appendRow();
-                    for (Map.Entry<String, Object> col : row.entrySet()) {
-                        jcoTable.setValue(col.getKey(), col.getValue());
+                    List<Map<String, Object>> fields = (List<Map<String, Object>>) row.get("fields");
+
+                    for (Map<String, Object> field : fields) {
+                        String colName = (String) field.get("key");
+                        if (!rowMeta.hasField(colName)) {
+                            throw new UserException.SAPException("Table [" + tableName + "] 에 정의되지 않은 필드: " + colName);
+                        }
+
+                        jcoTable.setValue(colName, field.get("value"));
                     }
                 }
             }
@@ -266,5 +281,355 @@ public class SapJcoUtil {
         output.put("TABLE", returnTableMap);
 
         return output;
+    }
+
+    // test용 import structure param생성
+    public static void setImportStructureParamForTest(RFCFunctionMetaData rfcMeta) {
+        List<RFCParamMetaData> importParams = rfcMeta.getImportParams();
+        if (importParams == null) {
+            importParams = new ArrayList<>();
+            rfcMeta.setImportParams(importParams);
+        }
+
+        //STRUCTURE #1
+        RFCParamMetaData struct1 = new RFCParamMetaData();
+        struct1.setName("TEST_STRUCT_1");
+        struct1.setDescription("테스트용 구조체 1 주석입니다");
+        struct1.setKind(SAPEnums.RFCParamKind.IMPORT);
+        struct1.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct1.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        List<RFCFieldMetaData> struct1Fields = new ArrayList<>();
+
+        RFCFieldMetaData s1f1 = new RFCFieldMetaData();
+        s1f1.setName("TEST_FIELD_A");
+        s1f1.setDescription("아무 의미 없는 값 A");
+        s1f1.setSapType("CHAR");
+        s1f1.setLength(10);
+        s1f1.setDecimals(0);
+        s1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s1f2 = new RFCFieldMetaData();
+        s1f2.setName("TEST_FIELD_B");
+        s1f2.setDescription("아무 의미 없는 값 B");
+        s1f2.setSapType("NUMC");
+        s1f2.setLength(6);
+        s1f2.setDecimals(0);
+        s1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct1Fields.add(s1f1);
+        struct1Fields.add(s1f2);
+        struct1.setFields(struct1Fields);
+
+        //STRUCTURE #2
+        RFCParamMetaData struct2 = new RFCParamMetaData();
+        struct2.setName("TEST_STRUCT_2");
+        struct2.setDescription("테스트용 구조체 2 description");
+        struct2.setKind(SAPEnums.RFCParamKind.IMPORT);
+        struct2.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        List<RFCFieldMetaData> struct2Fields = new ArrayList<>();
+
+        RFCFieldMetaData s2f1 = new RFCFieldMetaData();
+        s2f1.setName("FAKE_NUMBER");
+        s2f1.setDescription("숫자인척하는 값");
+        s2f1.setSapType("CURR");
+        s2f1.setLength(15);
+        s2f1.setDecimals(3);
+        s2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s2f2 = new RFCFieldMetaData();
+        s2f2.setName("FAKE_TEXT");
+        s2f2.setDescription("문자인척하는 값");
+        s2f2.setSapType("CHAR");
+        s2f2.setLength(20);
+        s2f2.setDecimals(0);
+        s2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct2Fields.add(s2f1);
+        struct2Fields.add(s2f2);
+        struct2.setFields(struct2Fields);
+
+
+        //STRUCTURE #3
+        RFCParamMetaData struct3 = new RFCParamMetaData();
+        struct3.setName("TEST_STRUCT_3 desc");
+        struct3.setDescription("테스트용 구조체 3");
+        struct3.setKind(SAPEnums.RFCParamKind.IMPORT);
+        struct3.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct3.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        List<RFCFieldMetaData> struct3Fields = new ArrayList<>();
+
+        RFCFieldMetaData s3f1 = new RFCFieldMetaData();
+        s3f1.setName("DUMMY_ID");
+        s3f1.setDescription("아이디인척 하는 값");
+        s3f1.setSapType("CHAR");
+        s3f1.setLength(30);
+        s3f1.setDecimals(0);
+        s3f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s3f2 = new RFCFieldMetaData();
+        s3f2.setName("DUMMY_NAME");
+        s3f2.setDescription("이름인척 하는 값");
+        s3f2.setSapType("CHAR");
+        s3f2.setLength(50);
+        s3f2.setDecimals(0);
+        s3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s3f3 = new RFCFieldMetaData();
+        s3f3.setName("DUMMY_DATE");
+        s3f3.setDescription("날짜인척 하는 값");
+        s3f3.setSapType("DATS");
+        s3f3.setLength(8);
+        s3f3.setDecimals(0);
+        s3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct3Fields.add(s3f1);
+        struct3Fields.add(s3f2);
+        struct3Fields.add(s3f3);
+        struct3.setFields(struct3Fields);
+
+        // importParams에 추가
+        importParams.add(struct1);
+        importParams.add(struct2);
+        importParams.add(struct3);
+    }
+
+    // test용 export structure param생성
+    public static void setExportStructureParamForTest(RFCFunctionMetaData rfcMeta) {
+        List<RFCParamMetaData> exportParams = rfcMeta.getExportParams();
+        if (exportParams == null) {
+            exportParams = new ArrayList<>();
+            rfcMeta.setExportParams(exportParams);
+        }
+
+        //STRUCTURE #1
+        RFCParamMetaData struct1 = new RFCParamMetaData();
+        struct1.setName("TEST_STRUCT_export_1");
+        struct1.setDescription("export테스트용 구조체 1 desc");
+        struct1.setKind(SAPEnums.RFCParamKind.EXPORT);
+        struct1.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct1.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        List<RFCFieldMetaData> struct1Fields = new ArrayList<>();
+
+        RFCFieldMetaData s1f1 = new RFCFieldMetaData();
+        s1f1.setName("TEST_FIELD_export_A");
+        s1f1.setDescription("export아무 의미 없는 값 A");
+        s1f1.setSapType("CHAR");
+        s1f1.setLength(10);
+        s1f1.setDecimals(0);
+        s1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s1f2 = new RFCFieldMetaData();
+        s1f2.setName("TEST_FIELD_export_B");
+        s1f2.setDescription("export아무 의미 없는 값 B");
+        s1f2.setSapType("NUMC");
+        s1f2.setLength(6);
+        s1f2.setDecimals(0);
+        s1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct1Fields.add(s1f1);
+        struct1Fields.add(s1f2);
+        struct1.setFields(struct1Fields);
+
+        //STRUCTURE #2
+        RFCParamMetaData struct2 = new RFCParamMetaData();
+        struct2.setName("TEST_STRUCT_export_2");
+        struct2.setDescription("테스트용 구조체 export2 asdf");
+        struct2.setKind(SAPEnums.RFCParamKind.EXPORT);
+        struct2.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        List<RFCFieldMetaData> struct2Fields = new ArrayList<>();
+
+        RFCFieldMetaData s2f1 = new RFCFieldMetaData();
+        s2f1.setName("FAKE_NUMBER_export");
+        s2f1.setDescription("export숫자인척하는 값");
+        s2f1.setSapType("CURR");
+        s2f1.setLength(15);
+        s2f1.setDecimals(3);
+        s2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s2f2 = new RFCFieldMetaData();
+        s2f2.setName("FAKE_TEXT_export123");
+        s2f2.setDescription("문자인척하는 값export");
+        s2f2.setSapType("CHAR");
+        s2f2.setLength(20);
+        s2f2.setDecimals(0);
+        s2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct2Fields.add(s2f1);
+        struct2Fields.add(s2f2);
+        struct2.setFields(struct2Fields);
+
+
+        //STRUCTURE #3
+        RFCParamMetaData struct3 = new RFCParamMetaData();
+        struct3.setName("TEST_exportSTRUCT_3");
+        struct3.setDescription("테스트용 export구조체 3 123");
+        struct3.setKind(SAPEnums.RFCParamKind.EXPORT);
+        struct3.setDataType(SAPEnums.RFCDataType.STRUCTURE);
+        struct3.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        List<RFCFieldMetaData> struct3Fields = new ArrayList<>();
+
+        RFCFieldMetaData s3f1 = new RFCFieldMetaData();
+        s3f1.setName("exportDUMMY_ID");
+        s3f1.setDescription("export 아이디인척 하는 값");
+        s3f1.setSapType("CHAR");
+        s3f1.setLength(30);
+        s3f1.setDecimals(0);
+        s3f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s3f2 = new RFCFieldMetaData();
+        s3f2.setName("DUMMY_NAME");
+        s3f2.setDescription("이름인척 하는 값export");
+        s3f2.setSapType("CHAR");
+        s3f2.setLength(50);
+        s3f2.setDecimals(0);
+        s3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData s3f3 = new RFCFieldMetaData();
+        s3f3.setName("export123DUMMY_DATE");
+        s3f3.setDescription("날짜인척 하는 값export");
+        s3f3.setSapType("DATS");
+        s3f3.setLength(8);
+        s3f3.setDecimals(0);
+        s3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        struct3Fields.add(s3f1);
+        struct3Fields.add(s3f2);
+        struct3Fields.add(s3f3);
+        struct3.setFields(struct3Fields);
+
+        // exportParams에 추가
+        exportParams.add(struct1);
+        exportParams.add(struct2);
+        exportParams.add(struct3);
+    }
+
+    // test용 table param생성
+    public static void setTableParamForTest(RFCFunctionMetaData rfcMeta) {
+        List<RFCParamMetaData> tableParams = rfcMeta.getTableParams();
+        if (tableParams == null) {
+            tableParams = new ArrayList<>();
+            rfcMeta.setTableParams(tableParams);
+        }
+
+        //TABLE #1
+        RFCParamMetaData table1 = new RFCParamMetaData();
+        table1.setName("TEST_TABLE_1");
+        table1.setDescription("테스트용 테이블 파라미터 1");
+        table1.setKind(SAPEnums.RFCParamKind.TABLE);
+        table1.setDataType(SAPEnums.RFCDataType.TABLE);
+        table1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        List<RFCFieldMetaData> table1Fields = new ArrayList<>();
+
+        RFCFieldMetaData t1f1 = new RFCFieldMetaData();
+        t1f1.setName("ROW_IDtest");
+        t1f1.setDescription("행 IDtest");
+        t1f1.setSapType("NUMC");
+        t1f1.setLength(5);
+        t1f1.setDecimals(0);
+        t1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData t1f2 = new RFCFieldMetaData();
+        t1f2.setName("ROW_TEXTtest");
+        t1f2.setDescription("행 설명 텍스트");
+        t1f2.setSapType("CHAR");
+        t1f2.setLength(50);
+        t1f2.setDecimals(0);
+        t1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        table1Fields.add(t1f1);
+        table1Fields.add(t1f2);
+        table1.setFields(table1Fields);
+
+        //TABLE #2
+        RFCParamMetaData table2 = new RFCParamMetaData();
+        table2.setName("TEST_TABLE_2");
+        table2.setDescription("hsyoon 테스트 테이블2");
+        table2.setKind(SAPEnums.RFCParamKind.TABLE);
+        table2.setDataType(SAPEnums.RFCDataType.TABLE);
+        table2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        List<RFCFieldMetaData> table2Fields = new ArrayList<>();
+
+        RFCFieldMetaData t2f1 = new RFCFieldMetaData();
+        t2f1.setName("AMOUNTTest");
+        t2f1.setDescription("금액test");
+        t2f1.setSapType("CURR");
+        t2f1.setLength(15);
+        t2f1.setDecimals(2);
+        t2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData t2f2 = new RFCFieldMetaData();
+        t2f2.setName("CURRENCYTest");
+        t2f2.setDescription("통화 코드test");
+        t2f2.setSapType("CHAR");
+        t2f2.setLength(3);
+        t2f2.setDecimals(0);
+        t2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData t2f3 = new RFCFieldMetaData();
+        t2f3.setName("DATETest");
+        t2f3.setDescription("전기일자test");
+        t2f3.setSapType("DATS");
+        t2f3.setLength(8);
+        t2f3.setDecimals(0);
+        t2f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        table2Fields.add(t2f1);
+        table2Fields.add(t2f2);
+        table2Fields.add(t2f3);
+        table2.setFields(table2Fields);
+
+        //TABLE #3
+        RFCParamMetaData table3 = new RFCParamMetaData();
+        table3.setName("TEST_TABLE_3");
+        table3.setDescription("사용자 목록 테스트 테이블test");
+        table3.setKind(SAPEnums.RFCParamKind.TABLE);
+        table3.setDataType(SAPEnums.RFCDataType.TABLE);
+        table3.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        List<RFCFieldMetaData> table3Fields = new ArrayList<>();
+
+        RFCFieldMetaData t3f1 = new RFCFieldMetaData();
+        t3f1.setName("USER_ID");
+        t3f1.setDescription("사용자 ID");
+        t3f1.setSapType("CHAR");
+        t3f1.setLength(30);
+        t3f1.setDecimals(0);
+        t3f1.setMandatory(SAPEnums.MandatoryType.REQUIRED);
+
+        RFCFieldMetaData t3f2 = new RFCFieldMetaData();
+        t3f2.setName("USER_NAME");
+        t3f2.setDescription("사용자 이름");
+        t3f2.setSapType("CHAR");
+        t3f2.setLength(50);
+        t3f2.setDecimals(0);
+        t3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        RFCFieldMetaData t3f3 = new RFCFieldMetaData();
+        t3f3.setName("LOGIN_TIME");
+        t3f3.setDescription("로그인 시간");
+        t3f3.setSapType("TIMS");
+        t3f3.setLength(6);
+        t3f3.setDecimals(0);
+        t3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
+
+        table3Fields.add(t3f1);
+        table3Fields.add(t3f2);
+        table3Fields.add(t3f3);
+        table3.setFields(table3Fields);
+
+        // tableParams에 추가
+        tableParams.add(table1);
+        tableParams.add(table2);
+        tableParams.add(table3);
     }
 }

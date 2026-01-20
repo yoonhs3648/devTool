@@ -32,6 +32,39 @@
         });
     });
 
+    //Description 툴팁
+    let tooltipEl = null;
+    $(document).on('mouseenter', '.fieldTooltip', function (e) {
+        const text = $(this).text().trim();
+        if (!text) return;  //description 없으면 리턴
+
+        tooltipEl = $('<div class="custom-tooltip"></div>')
+            .text(text)
+            .appendTo('body');
+
+        moveTooltip(e);
+    });
+
+    $(document).on('mousemove', '.fieldTooltip', function (e) {
+        moveTooltip(e);
+    });
+
+    $(document).on('mouseleave', '.fieldTooltip', function () {
+        if (tooltipEl) {
+            tooltipEl.remove();
+            tooltipEl = null;
+        }
+    });
+
+    function moveTooltip(e) {
+        if (!tooltipEl) return;
+
+        tooltipEl.css({
+            top: e.clientY - 35,
+            left: e.clientX + 10
+        });
+    }
+
     //테이블 파라미터 필드의 Type값 동기화
     function setParamType(el, typeValue) {
 
@@ -50,30 +83,18 @@
         });
     }
 
-    /*
-    // 예: KEY 입력 시 타입 계산해서 반영
-function calculateType(el) {
-
-    const type = 'VARCHAR(100)'; // 예시
-    const $span = $(el).closest('tr').find('span.paramType');
-
-    setParamType($span, type);
-}
-
-
-     */
-
-
     //IMPORT 스칼라 파라미터 필드 추가
     function addSCField() {
         let field = `
             <tr>
                 <td><input type="text" name="scParamKey" style="width:100%"></td>
                 <td><input type="text" name="scParamValue" style="width:100%"></td>
+                <td><span name="scParamDesc" class="paramType fieldTooltip"></span></td>
                 <td><span name="scParamType" class="paramType"></span></td>
+                <td><span name="scParamLength" class="paramType"></span></td>
                 <td>
-                    <button type="button" name="btnAdd" class="btn" onclick="addSCField()">+</button>
-                    <button type="button" name="btnDel" class="btn" onclick="delField(this)">-</button>
+                    <button type="button" name="btnAdd" class="btn" onclick="addSCField()" tabindex="-1">+</button>
+                    <button type="button" name="btnDel" class="btn" onclick="delField(this)" tabindex="-1">-</button>
                 </td>
             </tr>
         `;
@@ -86,17 +107,22 @@ function calculateType(el) {
         stIndex++;
         let structure = `
             <div class="inner-box">
-                <div style="margin-bottom:10px;">
+                <div style="margin-bottom:15px;">
                     <span style="margin: 5px; width:200px;">NAME :</span>
                     <label for="structureNm" class="text-label">
                         <input style="width: 300px;" type="text" name="structureNm">
                     </label>
-                    <button type="button" class="btn" onclick="delST(this)">X</button>
+                    <button type="button" class="btn" onclick="delST(this)" tabindex="-1">X</button>
                 </div>
-                <table id="structureTable_\${stIndex}">
+                <div style="margin-bottom:10px;">
+                    <span name="imStDesc" style="margin: 5px; width:200px;"></span>
+                </div>
+                <table id="structureTable_\${stIndex}" name="structureTable" style="table-layout: fixed; width: 100%;">
                     <colgroup>
-                        <col style="width:35%" />
-                        <col style="width:35%" />
+                        <col style="width:20%" />
+                        <col style="width:25%" />
+                        <col style="width:15%" />
+                        <col style="width:10%" />
                         <col style="width:10%" />
                         <col style="width:20%" />
                     </colgroup>
@@ -104,7 +130,9 @@ function calculateType(el) {
                     <tr>
                         <th>KEY</th>
                         <th>VALUE</th>
-                        <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                        <th>DECS</th>  <!-- 주석 -->
+                        <th>TYPE</th>  <!-- 데이터 타입 -->
+                        <th>LEN</th>   <!-- 길이(+소수점) -->
                         <th></th>
                     </tr>
                     </thead>
@@ -112,9 +140,11 @@ function calculateType(el) {
                     <tr>
                         <td><input type="text" name="stParamKey" style="width:100%"></td>
                         <td><input type="text" name="stParamValue" style="width:100%"></td>
+                        <td><span name="stParamDesc" class="paramType fieldTooltip"></span></td>
                         <td><span name="stParamType" class="paramType"></span></td>
+                        <td><span name="stParamLength" class="paramType"></span></td>
                         <td>
-                            <button type="button" name="btnAdd" class="btn" onclick="addSTField(\${stIndex})">+</button>
+                            <button type="button" name="btnAdd" class="btn" onclick="addSTField(\${stIndex})" tabindex="-1">+</button>
                         </td>
                     </tr>
                     </tbody>
@@ -131,10 +161,12 @@ function calculateType(el) {
             <tr>
                 <td><input type="text" name="stParamKey" style="width:100%"></td>
                 <td><input type="text" name="stParamValue" style="width:100%"></td>
+                <td><span name="stParamDesc" class="paramType fieldTooltip"></span></td>
                 <td><span name="stParamType" class="paramType"></span></td>
+                <td><span name="stParamLength" class="paramType"></span></td>
                 <td>
-                    <button type="button" name="btnAdd" class="btn" onclick="addSTField(\${index})">+</button>
-                    <button type="button" name="btnDel" class="btn" onclick="delField(this)">-</button>
+                    <button type="button" name="btnAdd" class="btn" onclick="addSTField(\${index})" tabindex="-1">+</button>
+                    <button type="button" name="btnDel" class="btn" onclick="delField(this)" tabindex="-1">-</button>
                 </td>
             </tr>
         `;
@@ -145,13 +177,15 @@ function calculateType(el) {
     function addSCFieldEX() {
         let field = `
             <tr>
-                <td><input type="text" name="scParamKeyEX" style="width:100%"></td>
-                <td><input type="text" name="scParamValueEX" style="width:100%"></td>
+                <td><input type="text" name="scParamKeyEX" style="width:100%" tabindex="-1" readonly></td>
+                <td><span name="scParamDescEX" class="paramType fieldTooltip"></span></td>
                 <td><span name="scParamTypeEX" class="paramType"></span></td>
+                <td><span name="scParamLengthEX" class="paramType"></span></td>
                 <td>
-                    <button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()">+</button>
-                    <button type="button" name="btnDel" class="btn" onclick="delField(this)">-</button>
+                    <!--<button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()" tabindex="-1">+</button>-->
+                    <!--<button type="button" name="btnDel" class="btn" onclick="delField(this)" tabindex="-1">-</button>-->
                 </td>
+                <td></td>
             </tr>
         `;
         $("#scalaTableEX tbody").append(field);
@@ -163,36 +197,45 @@ function calculateType(el) {
         stEXIndex++;
         let structure = `
             <div class="inner-box">
-                <div style="margin-bottom:10px;">
+                <div style="margin-bottom:15px;">
                     <span style="margin: 5px; width:200px;">NAME :</span>
                     <label for="structureNmEX" class="text-label">
-                        <input style="width: 300px;" type="text" name="structureNmEX">
+                        <input style="width: 300px;" type="text" name="structureNmEX" tabindex="-1" readonly>
                     </label>
-                    <button type="button" class="btn" onclick="delST(this)">X</button>
+                    <!--<button type="button" class="btn" onclick="delST(this)" tabindex="-1">X</button>-->
                 </div>
-                <table id="structureTableEX_\${stEXIndex}">
+                <div style="margin-bottom:10px;">
+                    <span name="exStDesc" style="margin: 5px; width:200px;"></span>
+                </div>
+                <table id="structureTableEX_\${stEXIndex}" name="structureTableEX" style="table-layout: fixed; width: 100%;">
                     <colgroup>
-                        <col style="width:35%" />
-                        <col style="width:35%" />
+                        <col style="width:20%" />
+                        <col style="width:25%" />
+                        <col style="width:15%" />
+                        <col style="width:10%" />
                         <col style="width:10%" />
                         <col style="width:20%" />
                     </colgroup>
                     <thead>
                     <tr>
                         <th>KEY</th>
-                        <th>VALUE</th>
-                        <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                        <th>DECS</th>  <!-- 주석 -->
+                        <th>TYPE</th>  <!-- 데이터 타입 -->
+                        <th>LEN</th>   <!-- 길이(소수점) -->
+                        <th></th>
                         <th></th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr>
-                        <td><input type="text" name="stParamKeyEX" style="width:100%"></td>
-                        <td><input type="text" name="stParamValueEX" style="width:100%"></td>
+                        <td><input type="text" name="stParamKeyEX" style="width:100%" tabindex="-1" readonly></td>
+                        <td><span name="stParamDescEX" class="paramType fieldTooltip"></span></td>
                         <td><span name="stParamTypeEX" class="paramType"></span></td>
+                        <td><span name="stParamLengthEX" class="paramType"></span></td>
                         <td>
-                            <button type="button" name="btnAdd" class="btn" onclick="addSTEXField(\${stEXIndex})">+</button>
+                            <!--<button type="button" name="btnAdd" class="btn" onclick="addSTEXField(\${stEXIndex})" tabindex="-1">+</button>-->
                         </td>
+                        <td></td>
                     </tr>
                     </tbody>
                 </table>
@@ -206,13 +249,14 @@ function calculateType(el) {
     function addSTEXField(index) {
         let field = `
             <tr>
-                <td><input type="text" name="stParamKeyEX" style="width:100%"></td>
-                <td><input type="text" name="stParamValueEX" style="width:100%"></td>
+                <td><input type="text" name="stParamKeyEX" style="width:100%" tabindex="-1" readonly></td>
+                <td><span name="stParamDescEX" class="paramType fieldTooltip"></span></td>
                 <td><span name="stParamTypeEX" class="paramType"></span></td>
+                <td><span name="stParamLengthEX" class="paramType"></span></td>
                 <td>
-                    <button type="button" name="btnAdd" class="btn" onclick="addSTEXField(\${index})">+</button>
-                    <button type="button" name="btnDel" class="btn" onclick="delField(this)">-</button>
+                    <!--<button type="button" name="btnAdd" class="btn" onclick="addSTEXField(\${stEXIndex})" tabindex="-1">+</button>-->
                 </td>
+                <td></td>
             </tr>
         `;
         $(`#structureTableEX_\${index} tbody`).append(field);
@@ -221,35 +265,42 @@ function calculateType(el) {
     //TABLE 파라미터 추가
     function addTable() {
         let table = `
-        <div class="middle-box" style="display: block;">
+        <div name="tableContBox" class="middle-box" style="display: block;">
             <div class="box-title">
-                <div style="margin-bottom:10px;">
+                <div style="margin-bottom:15px;">
                     <span style="margin: 5px; width:200px;">NAME :</span>
                     <label for="tableNm" class="text-label">
                         <input style="width: 300px;" type="text" name="tableNm">
                     </label>
-                    <button type="button" class="btn" onclick="addTableRow(this)">+ROW</button>
-                    <button type="button" class="btn" onclick="delTable(this)">X</button>
+                    <button type="button" class="btn btnAddTbRow" onclick="addTableRow(this)" tabindex="-1">+ROW</button>
+                    <button type="button" class="btn" onclick="delTable(this)" tabindex="-1">X</button>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <span name="tbDesc" style="margin: 5px; width:200px;"></span>
                 </div>
             </div>
             <div class="row-index">
                 <div class="box-title">
                     <span class="row-label" style="margin: 5px;">Row1</span>
-                    <button type="button" class="btn" onclick="delTableRow(this)">X</button>
+                    <button type="button" class="btn" onclick="delTableRow(this)" tabindex="-1">X</button>
                 </div>
                 <div class="inner-box">
-                    <table>
+                    <table name="tableTable" style="table-layout: fixed; width: 100%;">
                         <colgroup>
-                            <col style="width:35%" />
-                            <col style="width:35%" />
-                            <col style="width:10%" />
                             <col style="width:20%" />
+                            <col style="width:20%" />
+                            <col style="width:25%" />
+                            <col style="width:15%" />
+                            <col style="width:10%" />
+                            <col style="width:10%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                            <th>DECS</th>  <!-- 주석 -->
+                            <th>TYPE</th>  <!-- 데이터 타입 -->
+                            <th>LEN</th>   <!-- 길이(+소수점) -->
                             <th></th>
                         </tr>
                         </thead>
@@ -257,9 +308,11 @@ function calculateType(el) {
                         <tr>
                             <td><input type="text" name="tbParamKey" style="width:100%"></td>
                             <td><input type="text" name="tbParamValue" style="width:100%"></td>
+                            <td><span name="tbParamDesc" class="paramType fieldTooltip"></span></td>
                             <td><span name="tbParamType" class="paramType"></span></td>
+                            <td><span name="tbParamLength" class="paramType"></span></td>
                             <td>
-                                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)">+</button>
+                                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)" tabindex="-1">+</button>
                             </td>
                         </tr>
                         </tbody>
@@ -282,21 +335,25 @@ function calculateType(el) {
             <div class="row-index">
                 <div class="box-title">
                     <span class="row-label" style="margin: 5px;">Row1</span>
-                    <button type="button" class="btn" onclick="delTableRow(this)">X</button>
+                    <button type="button" class="btn" onclick="delTableRow(this)" tabindex="-1">X</button>
                 </div>
                 <div class="inner-box">
-                    <table>
+                    <table name="tableTable" style="table-layout: fixed; width: 100%;">
                         <colgroup>
-                            <col style="width:35%" />
-                            <col style="width:35%" />
-                            <col style="width:10%" />
                             <col style="width:20%" />
+                            <col style="width:20%" />
+                            <col style="width:25%" />
+                            <col style="width:15%" />
+                            <col style="width:10%" />
+                            <col style="width:10%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                            <th>DECS</th>  <!-- 주석 -->
+                            <th>TYPE</th>  <!-- 데이터 타입 -->
+                            <th>LEN</th>   <!-- 길이(+소수점) -->
                             <th></th>
                         </tr>
                         </thead>
@@ -304,9 +361,11 @@ function calculateType(el) {
                         <tr>
                             <td><input type="text" name="tbParamKey" style="width:100%"></td>
                             <td><input type="text" name="tbParamValue" style="width:100%"></td>
+                            <td><span name="tbParamDesc" class="paramType fieldTooltip"></span></td>
                             <td><span name="tbParamType" class="paramType"></span></td>
+                            <td><span name="tbParamLength" class="paramType"></span></td>
                             <td>
-                                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)">+</button>
+                                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)" tabindex="-1">+</button>
                             </td>
                         </tr>
                         </tbody>
@@ -334,10 +393,12 @@ function calculateType(el) {
         <tr>
             <td><input type="text" name="tbParamKey" style="width:100%"></td>
             <td><input type="text" name="tbParamValue" style="width:100%"></td>
+            <td><span name="tbParamDesc" class="paramType fieldTooltip"></span></td>
             <td><span name="tbParamType" class="paramType"></span></td>
+            <td><span name="tbParamLength" class="paramType"></span></td>
             <td>
-                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)">+</button>
-                <button type="button" name="btnDel" class="btn" onclick="delTableField(this)">-</button>
+                <button type="button" name="btnAdd" class="btn" onclick="addTableField(this)" tabindex="-1">+</button>
+                <button type="button" name="btnDel" class="btn" onclick="delTableField(this)" tabindex="-1">-</button>
             </td>
         </tr>
         `;
@@ -407,25 +468,30 @@ function calculateType(el) {
     }
 
     function getSAPMeta() {
-        //TODO: trim할것들 하기
+        if ($('#scalaContainer input[name="scParamKey"], #structureContainer input[name="stParamKey"], #tableContainer input[name="tbParamKey"]')
+                .filter(function () { return $(this).val().trim() !== ''; })
+                .length > 0) {
+            if (!confirm("⚠️ 입력된 파라미터가 있습니다. 무시하시고 진행하시겠습니까?")) return;
+        }
 
         myAxios.post(
             "/dev/getSAPMeta",
             {
-                ashost: $("input[name=ashost]").val(),
-                sysnr: $("input[name=sysnr]").val(),
-                client: $("input[name=client]").val(),
-                user: $("input[name=user]").val(),
-                passwd: $("input[name=passwd]").val(),
-                lang: $("input[name=lang]").val(),
-                functionName: $("input[name=rfcfnc]").val()
+                ashost: $("input[name=ashost]").val().trim(),
+                sysnr: $("input[name=sysnr]").val().trim(),
+                client: $("input[name=client]").val().trim(),
+                user: $("input[name=user]").val().trim(),
+                passwd: $("input[name=passwd]").val().trim(),
+                lang: $("input[name=lang]").val().trim(),
+                functionName: $("input[name=rfcfnc]").val().trim()
             },
             {
                 beforeSend: function () {
-                    showSpinner("RFC MetaData 수집중...");
+                    showSpinner("⏳ RFC MetaData 수집중...");
                 },
                 complete: function () {
                     hideSpinner();
+                    showSpinner("⏳ RFC MetaData 바인딩 중...");
                 }
             }
         )
@@ -434,20 +500,567 @@ function calculateType(el) {
 
             if (data.status == "ERROR") {
                 $("#parsedJson").html(`<div class='error'>오류 발생: [\${data.status}]::\${data.errKey ? data.errKey : ''} <br><br> 에러메세지: \${data.message ? data.message : ''} <br><br> 원인: \${data.detailMessage ? data.detailMessage : ''}</div>`);
+                showMessage("🚫 RFC MetaData 수집 실패", false);
                 return;
             }
 
             const functionName = data.functionName;
-            const importParams = data.importParams;
-            const exportParams = data.exportParams;
-            const tableParams = data.tableParams;
+            const importParamsArr = data.importParams;
+            const tableParamsArr = data.tableParams;
+            const exportParamsArr = data.exportParams;
 
+            //import파라미터세팅
+            setImportScalaRows(importParamsArr.filter(item => item.dataType === "STRING"));
+            setImportStructureRows(importParamsArr.filter(item => item.dataType === "STRUCTURE"))
+
+            //table파라미터세팅
+            setTableParam(tableParamsArr);
+
+            //export파라미터세팅
+            setExportScalaRows(exportParamsArr.filter(item => item.dataType === "STRING"));
+            setExportStructureRows(exportParamsArr.filter(item => item.dataType === "STRUCTURE"))
+
+            showMessage(`✅ [\${functionName}] 바인딩 완료`);
         })
         .catch(error => {
             $("#parsedJson").html(`<div class='error'>오류 발생: [\${error.status ? error.status : ''}] <br><br> 에러메세지: \${error.message ? error.message : ''}</div>`);
+            showMessage("🚫 에러발생", false);
+        })
+        .finally(() => {
+            hideSpinner();
         });
     }
 
+    //import파라미터중 스칼라파라미터 세팅
+    function setImportScalaRows(importParamsArr) {
+        const targetCount = importParamsArr.length;
+        let $rows = $('input[name="scParamKey"]').closest('tr');
+        let currentCount = $rows.length;
+
+        //import파라미터 탭 오픈
+        if (targetCount > 0) {
+            openParamTab('importTab');
+        }
+
+        // row 부족하면 추가
+        while (currentCount < targetCount) {
+            addSCField();
+            currentCount++;
+        }
+
+        // row 많으면 삭제 (뒤에서부터)
+        $rows = $('input[name="scParamKey"]').closest('tr');
+        while ($rows.length > targetCount) {
+            $rows.last().remove();
+            $rows = $('input[name="scParamKey"]').closest('tr');
+        }
+
+        // 필드 이름 세팅
+        $('input[name="scParamKey"]').each(function (idx) {
+            if (importParamsArr[idx]) {
+                $(this).val(importParamsArr[idx].name);
+            }
+        });
+
+        // 필드 주석 정보 세팅
+        $('span[name="scParamDesc"]').each(function (idx) {
+            var fieldDesc = "";
+            if (importParamsArr[idx]) {
+                fieldDesc = importParamsArr[idx].description
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터타입 정보 세팅
+        $('span[name="scParamType"]').each(function (idx) {
+            var fieldDesc = "";
+            if (importParamsArr[idx]) {
+                fieldDesc = importParamsArr[idx].sapType
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터길이 정보 세팅
+        $('span[name="scParamLength"]').each(function (idx) {
+            var fieldDesc = "";
+            if (importParamsArr[idx]) {
+                if (importParamsArr[idx].decimals != null && importParamsArr[idx].decimals > 0) {
+                    fieldDesc = importParamsArr[idx].length + " (" + importParamsArr[idx].decimals + ")";
+                }
+                else {
+                    fieldDesc = importParamsArr[idx].length;
+                }
+
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 value값 모두 초기화
+        $('input[name="scParamValue"]').val('');
+    }
+
+    //import파라미터중 구조체파라미터 세팅
+    function setImportStructureRows(importParamsArr) {
+        const targetCount = importParamsArr.length;
+        let $structures = $('input[name="structureNm"]');
+        let stCount = $structures.length;
+
+        //import파라미터 탭 오픈
+        if (targetCount > 0) {
+            openParamTab('importTab');
+        }
+
+        // 구조체 개수 부족하면 추가
+        while (stCount < targetCount) {
+            addST();
+            stCount++;
+        }
+
+        // 구조체 개수 많으면 삭제 (뒤에서부터)
+        $structures = $('input[name="structureNm"]');
+        while ($structures.length > targetCount) {
+            $structures.closest('div[class="inner-box"]').last().remove();
+            $structures = $('input[name="structureNm"]');
+        }
+
+        // 구조체 이름 세팅
+        $('input[name="structureNm"]').each(function (idx) {
+            if (importParamsArr[idx]) {
+                $(this).val(importParamsArr[idx].name);
+            }
+        });
+
+        // 구조체 주석 세팅
+        $('span[name="imStDesc"]').each(function (idx) {
+            if (importParamsArr[idx]) {
+                $(this).text("Description: " + importParamsArr[idx].description);
+            }
+        });
+
+        // 구조체 내 필드 정보 세팅
+        $('table[name="structureTable"]').each(function (idx){
+            if (importParamsArr[idx]) {
+                setImportStScalaRows(importParamsArr[idx].fields, idx);
+            }
+        });
+
+        // 구조체 내 필드 value값 모두 초기화
+        $('input[name="stParamValue"]').val('');
+    }
+
+    //import파라미터중 구조체 파라미터의 필드 세팅
+    function setImportStScalaRows(importStFieldsArr, idx) {
+        const targetCount = importStFieldsArr.length;
+
+        //구조체에는 아이디값이 있어서 추가삭제를 하면 아이디 시퀀스값이 순차적이지 않는 문제가있음. 재귀적으로 호출될때 소팅후에 작은값부터 순차적으로 선택
+        const structureIdx = idx + 1;
+        const $targetSts = $('[id^="structureTable_"]');
+        const sortedStructures = $targetSts.get().sort((a, b) => {
+            const numA = parseInt(a.id.replace('structureTable_', ''), 10);
+            const numB = parseInt(b.id.replace('structureTable_', ''), 10);
+            return numA - numB;
+        });
+        const targetEl = sortedStructures[structureIdx - 1];
+        if (!targetEl) {
+            return;
+        }
+        const structureId = targetEl.id;
+        const existStructureNo = parseInt(structureId.replace('structureTable_', ''), 10);
+
+        let $rows = $('#' + structureId).find('input[name="stParamKey"]').closest('tr');
+        let currentCount = $rows.length;
+
+        // row 부족하면 추가
+        while (currentCount < targetCount) {
+            addSTField(existStructureNo);
+            currentCount++;
+        }
+
+        // row 많으면 삭제 (뒤에서부터)
+        $rows = $('#' + structureId).find('input[name="stParamKey"]').closest('tr');
+        while ($rows.length > targetCount) {
+            $rows.last().remove();
+            $rows = $('#' + structureId).find('input[name="stParamKey"]').closest('tr');
+        }
+
+        // 필드 이름 세팅
+        $('#' + structureId).find('input[name="stParamKey"]').each(function (idx) {
+            if (importStFieldsArr[idx]) {
+                $(this).val(importStFieldsArr[idx].name);
+            }
+        });
+
+        // 필드 주석 정보 세팅
+        $('#' + structureId).find($('span[name="stParamDesc"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (importStFieldsArr[idx]) {
+                fieldDesc = importStFieldsArr[idx].description
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터타입 정보 세팅
+        $('#' + structureId).find($('span[name="stParamType"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (importStFieldsArr[idx]) {
+                fieldDesc = importStFieldsArr[idx].sapType
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터길이 정보 세팅
+        $('#' + structureId).find($('span[name="stParamLength"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (importStFieldsArr[idx]) {
+                if (importStFieldsArr[idx].decimals != null && importStFieldsArr[idx].decimals > 0) {
+                    fieldDesc = importStFieldsArr[idx].length + " (" + importStFieldsArr[idx].decimals + ")";
+                }
+                else {
+                    fieldDesc = importStFieldsArr[idx].length;
+                }
+
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 value값 모두 초기화
+        $('#' + structureId).find($('input[name="stParamValue"]')).val('');
+    }
+
+    //table파라미터 세팅
+    function setTableParam(tableParamsArr) {
+        const targetCount = tableParamsArr.length;
+        let $tables = $('input[name="tableNm"]');
+        let tableCount = $tables.length;
+
+        //table파라미터 탭 오픈
+        if (targetCount > 0) {
+            openParamTab('tableTab');
+        }
+
+        // 테이블 개수 부족하면 추가
+        while (tableCount < targetCount) {
+            addTable();
+            tableCount++;
+        }
+
+        // 테이블 개수 많으면 삭제 (뒤에서부터)
+        $tables = $('input[name="tableNm"]');
+        while ($tables.length > targetCount) {
+            $tables.closest('div[class="middle-box"]').last().remove();
+            $tables = $('input[name="tableNm"]');
+        }
+
+        // 테이블 이름 세팅
+        $('input[name="tableNm"]').each(function (idx) {
+            if (tableParamsArr[idx]) {
+                $(this).val(tableParamsArr[idx].name);
+            }
+        });
+
+        // 테이블 주석 세팅
+        $('span[name="tbDesc"]').each(function (idx) {
+            if (tableParamsArr[idx]) {
+                $(this).text("Description: " + tableParamsArr[idx].description);
+            }
+        });
+
+        // 테이블 내 필드 정보 세팅
+        $('div[name="tableContBox"]').each(function (idx){
+            if (tableParamsArr[idx]) {
+                setTableRows(tableParamsArr[idx].fields, idx);
+            }
+        });
+
+        // 테이블 내 필드 value값 모두 초기화
+        $('input[name="tbParamValue"]').val('');
+    }
+
+    //table파라미터 필드 세팅
+    function setTableRows(tableFieldsArr, idx) {
+        const targetCount = tableFieldsArr.length;
+
+        const $target = $('div[name="tableContBox"]').eq(idx);
+        if ($target.length === 0) {
+            return;
+        }
+
+        //테이블 파라미터 하나당 row는 하나만 세팅
+        let $rowIdx = $target.find('div[class="row-index"]');
+        while ($rowIdx.length > 1) {
+            $rowIdx.last().remove();
+            $rowIdx = $target.find('div[class="row-index"]');
+        }
+        if ($rowIdx.length < 1) {
+            $target.find('.btnAddTbRow').click();
+        }
+
+        let $rows = $target.find('input[name="tbParamKey"]');
+        let currentCount = $rows.length;
+
+        // 필드 부족하면 추가
+        while (currentCount < targetCount) {
+            $target.find('button[onclick="addTableField(this)"]').first().click();
+            currentCount++;
+        }
+
+        // row 많으면 삭제 (뒤에서부터)
+        $rows = $target.find('input[name="tbParamKey"]');
+        while ($rows.length > targetCount) {
+            $rows.closest('tr').remove();
+            $rows = $target.find('input[name="tbParamKey"]');
+        }
+
+        // 필드 이름 세팅
+        $target.find('input[name="tbParamKey"]').each(function (idx) {
+            if (tableFieldsArr[idx]) {
+                $(this).val(tableFieldsArr[idx].name);
+            }
+        });
+
+        // 필드 주석 정보 세팅
+        $target.find($('span[name="tbParamDesc"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (tableFieldsArr[idx]) {
+                fieldDesc = tableFieldsArr[idx].description
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터타입 정보 세팅
+        $target.find($('span[name="tbParamType"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (tableFieldsArr[idx]) {
+                fieldDesc = tableFieldsArr[idx].sapType
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터길이 정보 세팅
+        $target.find($('span[name="tbParamLength"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (tableFieldsArr[idx]) {
+                if (tableFieldsArr[idx].decimals != null && tableFieldsArr[idx].decimals > 0) {
+                    fieldDesc = tableFieldsArr[idx].length + " (" + tableFieldsArr[idx].decimals + ")";
+                }
+                else {
+                    fieldDesc = tableFieldsArr[idx].length;
+                }
+
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 value값 모두 초기화
+        $target.find($('input[name="tbParamValue"]')).val('');
+    }
+
+    //export파라미터중 스칼라파라미터 세팅
+    function setExportScalaRows(exportParamsArr) {
+        const targetCount = exportParamsArr.length;
+        let $rows = $('input[name="scParamKeyEX"]').closest('tr');
+        let currentCount = $rows.length;
+
+        //export파라미터 탭 display block
+        if (targetCount > 0) {
+            //openParamTab('exportTab');
+            $('#exportTabContainer').css('display', 'block')
+        }
+
+        // row 부족하면 추가
+        while (currentCount < targetCount) {
+            addSCFieldEX();
+            currentCount++;
+        }
+
+        // row 많으면 삭제 (뒤에서부터)
+        $rows = $('input[name="scParamKeyEX"]').closest('tr');
+        while ($rows.length > targetCount) {
+            $rows.last().remove();
+            $rows = $('input[name="scParamKeyEX"]').closest('tr');
+        }
+
+        // 필드 이름 세팅
+        $('input[name="scParamKeyEX"]').each(function (idx) {
+            if (exportParamsArr[idx]) {
+                $(this).val(exportParamsArr[idx].name);
+            }
+        });
+
+        // 필드 주석 정보 세팅
+        $('span[name="scParamDescEX"]').each(function (idx) {
+            var fieldDesc = "";
+            if (exportParamsArr[idx]) {
+                fieldDesc = exportParamsArr[idx].description
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터타입 정보 세팅
+        $('span[name="scParamTypeEX"]').each(function (idx) {
+            var fieldDesc = "";
+            if (exportParamsArr[idx]) {
+                fieldDesc = exportParamsArr[idx].sapType
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터길이 정보 세팅
+        $('span[name="scParamLengthEX"]').each(function (idx) {
+            var fieldDesc = "";
+            if (exportParamsArr[idx]) {
+                if (exportParamsArr[idx].decimals != null && exportParamsArr[idx].decimals > 0) {
+                    fieldDesc = exportParamsArr[idx].length + " (" + exportParamsArr[idx].decimals + ")";
+                }
+                else {
+                    fieldDesc = exportParamsArr[idx].length;
+                }
+
+                $(this).text(fieldDesc);
+            }
+        });
+    }
+
+    //export파라미터중 구조체파라미터 세팅
+    function setExportStructureRows(exportParamsArr) {
+        const targetCount = exportParamsArr.length;
+        let $structures = $('input[name="structureNmEx"]');
+        let stCount = $structures.length;
+
+        //export파라미터 탭 오픈
+        if (targetCount > 0) {
+            //openParamTab('exportTab');
+            $('#exportTabContainer').css('display', 'block')
+        }
+
+        // 구조체 개수 부족하면 추가
+        while (stCount < targetCount) {
+            addSTEX();
+            stCount++;
+        }
+
+        // 구조체 개수 많으면 삭제 (뒤에서부터)
+        $structures = $('input[name="structureNmEX"]');
+        while ($structures.length > targetCount) {
+            $structures.closest('div[class="inner-box"]').last().remove();
+            $structures = $('input[name="structureNmEX"]');
+        }
+
+        // 구조체 이름 세팅
+        $('input[name="structureNmEX"]').each(function (idx) {
+            if (exportParamsArr[idx]) {
+                $(this).val(exportParamsArr[idx].name);
+            }
+        });
+
+        // 구조체 주석 세팅
+        $('span[name="exStDesc"]').each(function (idx) {
+            if (exportParamsArr[idx]) {
+                $(this).text("Description: " + exportParamsArr[idx].description);
+            }
+        });
+
+        // 구조체 내 필드 정보 세팅
+        $('table[name="structureTableEX"]').each(function (idx){
+            if (exportParamsArr[idx]) {
+                setExportStScalaRows(exportParamsArr[idx].fields, idx);
+            }
+        });
+    }
+
+    //export파라미터중 구조체 파라미터의 필드 세팅
+    function setExportStScalaRows(exportStFieldsArr, idx) {
+        const targetCount = exportStFieldsArr.length;
+
+        //구조체에는 아이디값이 있어서 추가삭제를 하면 아이디 시퀀스값이 순차적이지 않는 문제가있음. 재귀적으로 호출될때 소팅후에 작은값부터 순차적으로 선택
+        const structureIdx = idx + 1;
+        const $targetSts = $('[id^="structureTableEX_"]');
+        const sortedStructures = $targetSts.get().sort((a, b) => {
+            const numA = parseInt(a.id.replace('structureTable_EX', ''), 10);
+            const numB = parseInt(b.id.replace('structureTable_EX', ''), 10);
+            return numA - numB;
+        });
+        const targetEl = sortedStructures[structureIdx - 1];
+        if (!targetEl) {
+            return;
+        }
+        const structureId = targetEl.id;
+        const existStructureNo = parseInt(structureId.replace('structureTableEX_', ''), 10);
+
+        let $rows = $('#' + structureId).find('input[name="stParamKeyEX"]').closest('tr');
+        let currentCount = $rows.length;
+
+        // row 부족하면 추가
+        while (currentCount < targetCount) {
+            addSTEXField(existStructureNo);
+            currentCount++;
+        }
+
+        // row 많으면 삭제 (뒤에서부터)
+        $rows = $('#' + structureId).find('input[name="stParamKeyEX"]').closest('tr');
+        while ($rows.length > targetCount) {
+            $rows.last().remove();
+            $rows = $('#' + structureId).find('input[name="stParamKeyEX"]').closest('tr');
+        }
+
+        // 필드 이름 세팅
+        $('#' + structureId).find('input[name="stParamKeyEX"]').each(function (idx) {
+            if (exportStFieldsArr[idx]) {
+                $(this).val(exportStFieldsArr[idx].name);
+            }
+        });
+
+        // 필드 주석 정보 세팅
+        $('#' + structureId).find($('span[name="stParamDescEX"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (exportStFieldsArr[idx]) {
+                fieldDesc = exportStFieldsArr[idx].description
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터타입 정보 세팅
+        $('#' + structureId).find($('span[name="stParamTypeEX"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (exportStFieldsArr[idx]) {
+                fieldDesc = exportStFieldsArr[idx].sapType
+                $(this).text(fieldDesc);
+            }
+        });
+
+        // 필드 데이터길이 정보 세팅
+        $('#' + structureId).find($('span[name="stParamLengthEX"]')).each(function (idx) {
+            var fieldDesc = "";
+            if (exportStFieldsArr[idx]) {
+                if (exportStFieldsArr[idx].decimals != null && exportStFieldsArr[idx].decimals > 0) {
+                    fieldDesc = exportStFieldsArr[idx].length + " (" + exportStFieldsArr[idx].decimals + ")";
+                }
+                else {
+                    fieldDesc = exportStFieldsArr[idx].length;
+                }
+
+                $(this).text(fieldDesc);
+            }
+        });
+    }
+
+    //파라미터 탭 오픈
+    function openParamTab(id) {
+        const $span = $('#' + id);
+
+        if ($span.hasClass('open')) {
+            return;
+        }
+
+        const $outer = $span.closest('.outer-box');
+        const $header = $span.closest('.section-header');
+
+        $outer.find('.middle-box').slideDown(200);
+        $header.find('button').show();
+        $span.addClass('open');
+    }
+
+    //파라미터 탭 토글
     function toggleParamBox(el) {
         const $outer = $(el).closest('.outer-box');
         const $header = $(el).closest('.section-header');
@@ -460,67 +1073,114 @@ function calculateType(el) {
     }
 
     function callRFC() {
-        //TODO: trim할것들 하기
-
         //Import파라미터 자료구조 생성
-        let importParams = {};
-        $("#paramTable tbody tr").each(function() {
-            let key = $(this).find("input[name=paramKey]").val().trim();
-            let value = $(this).find("input[name=paramValue]").val().trim();
+        let importParams = [];
+        //스칼라 파라미터
+        $("#scalaTable tbody tr").each(function() {
+            let key = $(this).find("input[name=scParamKey]").val()?.trim();
+            let value = $(this).find("input[name=scParamValue]").val();
 
-            if (key.length > 0) {
-                importParams[key] = value;
+            if (key) {
+                importParams.push({
+                    key: key,
+                    value: value,
+                    dataType: "STRING"
+                });
             }
         });
+        //구조체 파라미터
+        $("#structureContainer .inner-box").each(function () {
+            const $box = $(this);
 
-        //Table 자료구조 생성
-        let tableParams = {};
-        $("#tableContainer .table-wrapper").each(function () {
+            // 구조체 이름
+            const structName = $box.find('input[name="structureNm"]').val()?.trim();
+            if (!structName) {
+                return;
+            }
 
-            let tableName = $(this).find("input[name=tableName]").val().trim();
-            if (tableName.length === 0) return;
+            let fields = [];
 
-            let tableRows = [];
-            let currentRow = {};
+            // 구조체 내부 필드
+            $box.find('table[name="structureTable"] tbody tr').each(function () {
+                const $tr = $(this);
+                const fieldName = $tr.find('input[name="stParamKey"]').val()?.trim();
+                const fieldValue = $tr.find('input[name="stParamValue"]').val();
 
-            $(this).find("tbody tr").each(function () {
-                let key = $(this).find("input[name=tableKey]").val().trim();
-                let value = $(this).find("input[name=tableValue]").val().trim();
-
-                if (key.length > 0) {
-                    currentRow[key] = value;
-                }
-
-                if (Object.keys(currentRow).length > 0) {
-                    tableRows.push(currentRow);
-                    currentRow = {};
+                if (fieldName) {
+                    fields.push({
+                        key: fieldName,
+                        value: fieldValue
+                    });
                 }
             });
 
-            if (tableRows.length > 0) {
-                tableParams[tableName] = tableRows;
+            importParams.push({
+                name: structName,
+                dataType: "STRUCTURE",
+                fields: fields
+            });
+        });
+
+
+        //Table 자료구조 생성
+        let tableParams = [];
+        $("#tableContainer .middle-box").each(function () {
+            const $box = $(this);
+
+            // 테이블 이름
+            const tableName = $box.find('input[name="tableNm"]').val()?.trim();
+            if (!tableName) {
+                return;
             }
+
+            let rows = [];
+
+            // 테이블 rows
+            $box.find('div[class="row-index"]').each(function () {
+                let rowFields = [];
+
+                // 테이블 rows 내부 필드
+                $(this).find('table[name="tableTable"] tbody tr').each(function () {
+                    const $tr = $(this);
+                    const fieldName = $tr.find('input[name="tbParamKey"]').val()?.trim();
+                    const fieldValue = $tr.find('input[name="tbParamValue"]').val();
+
+                    if (fieldName) {
+                        rowFields.push({
+                            key: fieldName,
+                            value: fieldValue
+                        });
+                    }
+                });
+
+                rows.push({
+                    fields: rowFields
+                });
+            })
+
+            tableParams.push({
+                name: tableName,
+                dataType: "TABLE",
+                rows: rows
+            });
         });
 
         myAxios.post(
             "/dev/callRFC",
             {
-                ashost: $("input[name=ashost]").val(),
-                sysnr: $("input[name=sysnr]").val(),
-                client: $("input[name=client]").val(),
-                user: $("input[name=user]").val(),
-                passwd: $("input[name=passwd]").val(),
-                lang: $("input[name=lang]").val(),
-                functionName: $("input[name=rfcfnc]").val(),
-                params: JSON.stringify(importParams),
-                tables: JSON.stringify(tableParams)
+                ashost: $("input[name=ashost]").val().trim(),
+                sysnr: $("input[name=sysnr]").val().trim(),
+                client: $("input[name=client]").val().trim(),
+                user: $("input[name=user]").val().trim(),
+                passwd: $("input[name=passwd]").val().trim(),
+                lang: $("input[name=lang]").val().trim(),
+                functionName: $("input[name=rfcfnc]").val().trim(),
+                importParams: JSON.stringify(importParams),
+                tableParams: JSON.stringify(tableParams)
             },
             {
                 beforeSend: function () {
-                    showSpinner("얌전히 기다려라");
-                },
-                headers: {
-                    'Content-Type': 'application/json;charset=UTF-8'
+                    showSpinner("⏳ RFC Function Call...");
                 }
             }
         )
@@ -530,6 +1190,7 @@ function calculateType(el) {
 
             if (data.status == "ERROR") {
                 $("#parsedJson").html(`<div class='error'>오류 발생: [\${data.status}]::\${data.errKey ? data.errKey : ''} <br><br> 에러메세지: \${data.message ? data.message : ''} <br><br> 원인: \${data.detailMessage ? data.detailMessage : ''}</div>`);
+                showMessage("🚫 RFC Function Call 오류발생", false);
                 return;
             }
 
@@ -538,9 +1199,12 @@ function calculateType(el) {
                 $('.result-container').css('white-space', 'nowrap');
                 parseJson(jsonStrResult);
             }
+
+            showMessage("✅ RFC Function Call 성공");
         })
         .catch(error => {
             $("#parsedJson").html(`<div class='error'>오류 발생: [\${error.status ? error.status : ''}] <br><br> 에러메세지: \${error.message ? error.message : ''}</div>`);
+            showMessage("🚫 RFC Function Call 오류발생", false);
         })
         .finally(() => {
             hideSpinner();
@@ -565,7 +1229,7 @@ function calculateType(el) {
             },
             error: function(response, status, error){
                 $("#parsedJson").html(`<div class='error'>오류 발생: [\${status}]:: <br> \${response} <br> \${error}</div>`);
-                alert('파싱 중 오류가 발생했습니다: ' + error);
+                alert('🚫 파싱 중 오류가 발생했습니다: ' + error);
             }
         });
     }
@@ -742,7 +1406,7 @@ function calculateType(el) {
                     if (color === "default"){
                         $(this).css('border-left', `\${border} \${style} #999999`);
                     } else {
-                        $(this).css('border-left', `\${border} \${style} hsla(\${hue}, \${saturation}, \${lightness}, \${alpha})`);
+                        $(this).css('border-left', `1px dotted hsla(\${hue}, 70%, 50%, 1)`);
                     }
                 } else {
                     $(this).css('border-left', '');
@@ -797,12 +1461,12 @@ function calculateType(el) {
 
             const success = document.execCommand('copy'); //선택된 범위를 클립보드로 복사
             if (success) {
-                showCopySuccessMessage();
+                showMessage("✅ 복사 완료");
             } else {
-                alert('복사에 실패했습니다...');
+                showMessage('🚫 복사에 실패했습니다...', false);
             }
         } catch (err) {
-            alert('복사 중 오류가 발생했습니다: ' + err);
+            alert('🚫 복사 중 오류가 발생했습니다: ' + err);
         } finally {
             //selection.removeAllRanges();    //선택영역 해제
             if (tempTextarea && tempTextarea.parentNode) {
@@ -866,21 +1530,38 @@ function calculateType(el) {
         return formatted.trim();
     }
 
-    function showCopySuccessMessage() {
-        var messageDiv = document.getElementById('copy-success-message');
-        messageDiv.style.display = 'block';
-        messageDiv.style.opacity = '1';
+    function showMessage(msg, isSuccess = true) {
+        var $messageDiv = $('#copy-success-message');
+        $messageDiv.text(msg);
+
+        var orginBgColor = $messageDiv.css('background-color'); //기존 성공배경색 저장
+
+        if (!isSuccess) {
+            $messageDiv.css({
+                background: '#dc3545'
+            });
+        }
+
+        $messageDiv.css({
+            display: 'block',
+            opacity: 1
+        });
 
         // 1초 후에 서서히 사라지게
         setTimeout(function () {
-            messageDiv.style.transition = 'opacity 0.5s';
-            messageDiv.style.opacity = '0';
+            $messageDiv.css({
+                transition: 'opacity 0.5s',
+                opacity: 0
+            });
         }, 1000);
 
         // 1.5초 후에 display: none 처리
         setTimeout(function () {
-            messageDiv.style.display = 'none';
-            messageDiv.style.transition = '';
+            $messageDiv.css({
+                display: 'none',
+                transition: '',
+                background: orginBgColor    //기존 성공배경색 복구
+            });
         }, 1500);
     }
 
@@ -896,7 +1577,7 @@ function calculateType(el) {
                         <option value="PT">Plain Text</option>
                     </select>
                 </label>
-                <button class="btn" id="rfcCall" onclick="callRFC()">CALL</button>
+                <button class="btn" id="rfcCall" onclick="callRFC()" tabindex="-1">CALL</button>
             </span>
         </div>
 
@@ -932,16 +1613,17 @@ function calculateType(el) {
             <label for="rfcfnc" class="text-label">
                 <input style="width: 300px;" type="text" name="rfcfnc" value="">
             </label>
+            <span id="functionDesc" style="margin: 5px; width:200px;"></span>
         </div>
 
         <div style="margin-top: 20px; text-align: center">
-            <button class="btn" style="width: 80%;" id="getSAPMeta" onclick="getSAPMeta()">GET RFC METADATA</button>
+            <button class="btn" style="width: 80%;" id="getSAPMeta" onclick="getSAPMeta()" tabindex="-1">GET RFC METADATA</button>
         </div>
 
         <!-- IMPORT파라미터 시작-->
         <div class="outer-box">
             <div class="section-header">
-                <span onclick="toggleParamBox(this)">IMPORT</span>
+                <span id="importTab" onclick="toggleParamBox(this)">IMPORT</span>
             </div>
             <!-- 스칼라 파라미터 시작-->
             <div class="middle-box" id="scalaContainer">
@@ -949,18 +1631,22 @@ function calculateType(el) {
                     <span style="margin: 5px;">SCALA</span>
                 </div>
                 <div class="inner-box">
-                    <table id="scalaTable">
+                    <table id="scalaTable" style="table-layout: fixed; width: 100%;">
                         <colgroup>
-                            <col style="width:35%" />
-                            <col style="width:35%" />
-                            <col style="width:10%" />
                             <col style="width:20%" />
+                            <col style="width:20%" />
+                            <col style="width:25%" />
+                            <col style="width:15%" />
+                            <col style="width:10%" />
+                            <col style="width:10%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                            <th>DECS</th>  <!-- 주석 -->
+                            <th>TYPE</th>  <!-- 데이터 타입 -->
+                            <th>LEN</th>   <!-- 길이(+소수점) -->
                             <th></th>
                         </tr>
                         </thead>
@@ -968,9 +1654,11 @@ function calculateType(el) {
                         <tr>
                             <td><input type="text" name="scParamKey" style="width:100%"></td>
                             <td><input type="text" name="scParamValue" style="width:100%"></td>
+                            <td><span name="scParamDesc" class="paramType fieldTooltip"></span></td>
                             <td><span name="scParamType" class="paramType"></span></td>
+                            <td><span name="scParamLength" class="paramType"></span></td>
                             <td>
-                                <button type="button" name="btnAdd" class="btn" onclick="addSCField()">+</button>
+                                <button type="button" name="btnAdd" class="btn" onclick="addSCField()" tabindex="-1">+</button>
                             </td>
                         </tr>
                         </tbody>
@@ -982,7 +1670,7 @@ function calculateType(el) {
             <div class="middle-box" id="structureContainer">
                 <div class="box-title">
                     <span style="margin: 5px;">STRUCTURE</span>
-                    <button type="button" class="btn" onclick="addST()">+</button>
+                    <button type="button" class="btn" onclick="addST()" tabindex="-1">+</button>
                 </div>
             </div>
             <!-- 구조체 파라미터 끝-->
@@ -992,16 +1680,16 @@ function calculateType(el) {
         <!-- TABLE파라미터 시작-->
         <div class="outer-box" id="tableContainer">
             <div class="section-header">
-                <span onclick="toggleParamBox(this)">TABLE</span>
-                <button type="button" class="btn" style="float: right; display: none;" onclick="addTable()">+ TABLE</button>
+                <span id="tableTab" onclick="toggleParamBox(this)">TABLE</span>
+                <button type="button" class="btn" style="float: right; display: none;" onclick="addTable()" tabindex="-1">+ TABLE</button>
             </div>
         </div>
         <!-- TABLE파라미터 끝-->
 
         <!-- EXPORT파라미터 시작-->
-        <div class="outer-box">
+        <div class="outer-box" id="exportTabContainer" style="display: none;">
             <div class="section-header">
-                <span onclick="toggleParamBox(this)">EXPORT</span>
+                <span id="exportTab" onclick="toggleParamBox(this)">EXPORT</span>
             </div>
             <!-- 스칼라 파라미터 시작-->
             <div class="middle-box" id="scalaContainerEX">
@@ -1009,29 +1697,35 @@ function calculateType(el) {
                     <span style="margin: 5px;">SCALA</span>
                 </div>
                 <div class="inner-box">
-                    <table id="scalaTableEX">
+                    <table id="scalaTableEX" style="table-layout: fixed; width: 100%;">
                         <colgroup>
-                            <col style="width:35%" />
-                            <col style="width:35%" />
+                            <col style="width:20%" />
+                            <col style="width:25%" />
+                            <col style="width:15%" />
+                            <col style="width:10%" />
                             <col style="width:10%" />
                             <col style="width:20%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
-                            <th>VALUE</th>
-                            <th>Type(len/dec)</th>  <!-- 타입(길이/소수점(decimals))-->
+                            <th>DECS</th>  <!-- 주석 -->
+                            <th>TYPE</th>  <!-- 데이터 타입 -->
+                            <th>LEN</th>   <!-- 길이(+소수점) -->
+                            <th></th>
                             <th></th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr>
-                            <td><input type="text" name="scParamKeyEX" style="width:100%"></td>
-                            <td><input type="text" name="scParamValueEX" style="width:100%"></td>
+                            <td><input type="text" name="scParamKeyEX" style="width:100%" tabindex="-1" readonly></td>
+                            <td><span name="scParamDescEX" class="paramType fieldTooltip"></span></td>
                             <td><span name="scParamTypeEX" class="paramType"></span></td>
+                            <td><span name="scParamLengthEX" class="paramType"></span></td>
                             <td>
-                                <button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()">+</button>
+                                <%--<button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()" tabindex="-1">+</button>--%>
                             </td>
+                            <td></td>
                         </tr>
                         </tbody>
                     </table>
@@ -1042,7 +1736,7 @@ function calculateType(el) {
             <div class="middle-box" id="structureContainerEX">
                 <div class="box-title">
                     <span style="margin: 5px;">STRUCTURE</span>
-                    <button type="button" class="btn" onclick="addSTEX()">+</button>
+                    <%--<button type="button" class="btn" onclick="addSTEX()" tabindex="-1">+</button>--%>
                 </div>
             </div>
             <!-- 구조체 파라미터 끝-->
@@ -1050,12 +1744,12 @@ function calculateType(el) {
         <!-- EXPORT파라미터 끝-->
     </div>
     <div class="middle">
-        <button class='hide-btn' style="width:15px;" onclick="showLeftContainer(this)"><</button>
+        <button class='hide-btn' style="width:15px;" onclick="showLeftContainer(this)" tabindex="-1"><</button>
     </div>
     <div class="right" id="result">
-        <div class="copy-success-message" id="copy-success-message">✅ 복사 완료</div>
+        <div class="copy-success-message" id="copy-success-message"></div>
         <div class="result-wrapper">
-            <button class="copy-btn" onclick="copyResult()">복사</button>
+            <button class="copy-btn" onclick="copyResult()" tabindex="-1">복사</button>
             <!-- 결과 -->
             <div id="parsedJson" class="result-container"></div>
         </div>

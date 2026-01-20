@@ -316,15 +316,31 @@ function myFetch(input, init = {}) {
 
     axios.post('/api/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        responseType: 'blob',
+        'Content-Type': 'multipart/form-data'       //명시하지않아도 작동함
       }
     });
 
     //서버
     @RequestMapping(value = "/api/upload", method = RequestMethod.POST)
-    public @ResponseBody String upload(@RequestParam("file") MultipartFile file,
-                                       @RequestParam("userId") int userId) {
-        ...
+    public ResponseEntity<Resource> String upload(@RequestParam("file") MultipartFile file,
+                                                 @RequestParam("userId") int userId) {
+
+        //InputStream
+        InputStream translatedStream = new ByteArrayInputStream(new byte[0]);
+
+        //Resource로
+        InputStreamResource resource = new InputStreamResource(translatedStream);
+
+        //파일명 설정
+        String originalName = file.getOriginalFilename();
+        String downloadName = "download_" + originalName;
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + downloadName + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 
 

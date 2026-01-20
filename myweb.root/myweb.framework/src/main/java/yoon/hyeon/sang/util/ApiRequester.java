@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import yoon.hyeon.sang.exception.ApiException;
 import yoon.hyeon.sang.exception.UserException;
+import yoon.hyeon.sang.userObj.ApiFileResponse;
 import yoon.hyeon.sang.userObj.ApiResponse;
 
 import javax.servlet.http.HttpServletRequest;
@@ -116,6 +117,93 @@ public class ApiRequester {
             logger.error(API_MAKER, "================");
 
             return new ApiResponse(ex.getRawStatusCode(), ex.getResponseHeaders(), ex.getResponseBodyAsString(), 0);
+        } catch (RestClientException ex) {
+            // Http 응답이 없는 경우 (연결실패, DNS 오류 등..)
+            logger.error(API_MAKER, "== [API No Response Error] ==");
+            logger.error(API_MAKER, "에러 메시지: {}", ex.getMessage());
+            logger.error(API_MAKER, "durationMs : {}ms", System.currentTimeMillis() - startTime);
+            logger.error(API_MAKER, "================");
+
+            throw new ApiException.NoHttpResponseException(ex);
+        }
+    }
+
+    public ApiFileResponse callFileApi(String url, HttpMethod method, Map<String, String> headersMap, Map<String, ?> bodyMap) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        // 헤더 설정
+        HttpHeaders headers = new HttpHeaders();
+        if (headersMap != null) {
+            headers.setAll(headersMap);
+        }
+
+        // Content-Type 설정
+        String contentTypeStr = headersMap != null ? headersMap.get("Content-Type") : null;
+        MediaType contentType = null;
+        if (contentTypeStr != null) {
+            try {
+                contentType = MediaType.parseMediaType(contentTypeStr);
+            } catch (Exception e) {
+                throw new ApiException.InvalidContentType(e);   //유효하지않은 ContentType 예외처리
+            }
+        } else if (method != HttpMethod.GET) {
+            contentType = MediaType.APPLICATION_JSON;   //GET방식 이외에 요청은 application/json을 content-type을 기본값으로 설정
+        }
+
+        if (contentType != null){
+            headers.setContentType(contentType);
+        }
+
+        HttpEntity<?> requestEntity;
+        String finalUrl = url;
+
+        // HTTP METHOD에 따라 URL, BODY 처리
+        if (method == HttpMethod.GET) {
+            if (bodyMap != null && !bodyMap.isEmpty()) {
+                finalUrl = appendQueryParams(url, bodyMap); //GET요청에 BODY값이 있으면 쿼리스트링으로 변환
+            }
+            requestEntity = new HttpEntity<>(headers);
+        } else if (MediaType.APPLICATION_FORM_URLENCODED.equals(contentType)) {     //Content-Type = application/x-www-form-urlencoded 인 경우
+            MultiValueMap<String, String> formBody = new LinkedMultiValueMap<>();
+            for (Map.Entry<String, ?> entry : bodyMap.entrySet()) {
+                formBody.add(entry.getKey(), entry.getValue().toString());
+            }
+            requestEntity = new HttpEntity<>(formBody, headers);
+        } else {
+            requestEntity = new HttpEntity<>(bodyMap, headers);     // 그외의 Content-Type (application/json, application/xml 등..)
+        }
+
+        //RequestInfo Logging
+        logger.debug(API_MAKER, "== [API Request] ==");
+        logger.debug(API_MAKER, "Request URL : {}", finalUrl);
+        logger.debug(API_MAKER, "Http Method : {}", method);
+        logger.debug(API_MAKER, "Request Headers : {}", headers);
+        logger.debug(API_MAKER, "Request Body : {}", bodyMap);
+        logger.debug(API_MAKER, "================");
+
+        long startTime = System.currentTimeMillis();
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(finalUrl, method, requestEntity, byte[].class);
+            long endTime = System.currentTimeMillis();
+            long durationMs = endTime - startTime;
+
+            return new ApiFileResponse(
+                    response.getStatusCodeValue(),
+                    response.getHeaders(),
+                    response.getBody(),     // byte[]
+                    System.currentTimeMillis() - startTime
+            );
+
+        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+            // 400,500 번때 에러일 경우
+            logger.error(API_MAKER, "== [API Response Error] ==");
+            logger.error(API_MAKER, "Status Code : {}", ex.getRawStatusCode());
+            logger.error(API_MAKER, "Response headers : {}", ex.getResponseHeaders());
+            logger.error(API_MAKER, "Response Body: {}", ex.getResponseBodyAsString());
+            logger.error(API_MAKER, "durationMs : {}ms", System.currentTimeMillis() - startTime);
+            logger.error(API_MAKER, "================");
+
+            return new ApiFileResponse(ex.getRawStatusCode(), ex.getResponseHeaders(), ex.getResponseBodyAsByteArray(), 0);
         } catch (RestClientException ex) {
             // Http 응답이 없는 경우 (연결실패, DNS 오류 등..)
             logger.error(API_MAKER, "== [API No Response Error] ==");

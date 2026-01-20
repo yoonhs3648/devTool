@@ -59,10 +59,34 @@
             <DefaultRolloverStrategy max="365"/>
         </RollingFile>
 
+        <!-- SAP DEBUG 로그 -->
+        <RollingFile name="SAPDebugFile"
+                     fileName="${sys:catalina.base}/logs/mylogs/sap.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/sap-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
         <!-- 외부 API ERROR 로그 -->
         <RollingFile name="ApiErrorFile"
                      fileName="${sys:catalina.base}/logs/mylogs/api-error.log"
                      filePattern="${sys:catalina.base}/logs/mylogs/archive/api-error-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="365"/>
+        </RollingFile>
+
+        <!-- SAP ERROR 로그 -->
+        <RollingFile name="SAPErrorFile"
+                     fileName="${sys:catalina.base}/logs/mylogs/sap-error.log"
+                     filePattern="${sys:catalina.base}/logs/mylogs/archive/sap-error-%d{yyyy-MM-dd}.log.gz">
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %c - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
@@ -87,9 +111,18 @@
             <AppenderRef ref="ApiDebugFile"/>
         </Async>
 
+        <Async name="AsyncSAPDebug">
+            <AppenderRef ref="SAPDebugFile"/>
+        </Async>
+
         <Async name="AsyncApiError">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="ApiErrorFile"/>
+        </Async>
+
+        <Async name="AsyncSAPError">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="SAPErrorFile"/>
         </Async>
     </Appenders>
 
@@ -106,6 +139,19 @@
             <AppenderRef ref="AsyncApiError">
                 <Filters>
                     <MarkerFilter marker="API" onMatch="NEUTRAL" onMismatch="DENY"/>
+                    <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+
+            <AppenderRef ref="AsyncSAPDebug">
+                <Filters>
+                    <MarkerFilter marker="SAP" onMatch="ACCEPT" onMismatch="DENY"/>
+                </Filters>
+            </AppenderRef>
+
+            <AppenderRef ref="AsyncSAPError">
+                <Filters>
+                    <MarkerFilter marker="SAP" onMatch="NEUTRAL" onMismatch="DENY"/>
                     <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
                 </Filters>
             </AppenderRef>

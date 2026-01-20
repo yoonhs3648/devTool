@@ -66,4 +66,13 @@
         <property name="order" value="1" />
     </bean>
 
+    <!-- MultipartResolver bean -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8"/>            <!-- 인코딩 -->
+        <property name="maxUploadSize" value="104857600"/>          <!-- 전체 요청 크기 -->
+        <property name="maxUploadSizePerFile" value="52428800"/>    <!-- 파일 하나당 -->
+        <property name="maxInMemorySize" value="4096"/>             <!-- 메모리 초과 시 임시 저장 -->
+    </bean>
+    <!-- MultipartResolver bean end -->
+
 </beans>

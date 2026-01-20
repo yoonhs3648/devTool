@@ -4,6 +4,9 @@
 <script>
     function doParse() {
         let input = $('#urlInput').val().trim();
+        if (input.length === 0 ) {
+            return;
+        }
         let hasProtocol = 1;    //true
         if (!input.startsWith("http://") && !input.startsWith("https://")) {
             input = 'https://' + input;
@@ -16,15 +19,44 @@
             const url = new URL(input);
             let html = '';
             const params = {};
-            for (const [key, value] of url.searchParams.entries()) {
-                if (params[key]) {
-                    if (Array.isArray(params[key])) {
-                        params[key].push(value);
+            const isDoDecode = $('#URLDecode').is(':checked');
+
+            if (isDoDecode) {
+                const url = new URL(input);
+
+                for (const [key, value] of url.searchParams.entries()) {
+                    if (params[key]) {
+                        if (Array.isArray(params[key])) {
+                            params[key].push(value);
+                        } else {
+                            params[key] = [params[key], value];
+                        }
                     } else {
-                        params[key] = [params[key], value];
+                        params[key] = value;
                     }
-                } else {
-                    params[key] = value;
+                }
+            } else {
+                const query = input.split('?')[1];
+                if (query) {
+                    const pairs = query.split('&');
+
+                    for (const pair of pairs) {
+                        if (!pair) continue;
+
+                        const eqIdx = pair.indexOf('=');
+                        const key = eqIdx >= 0 ? pair.substring(0, eqIdx) : pair;
+                        const value = eqIdx >= 0 ? pair.substring(eqIdx + 1) : '';
+
+                        if (params[key]) {
+                            if (Array.isArray(params[key])) {
+                                params[key].push(value);
+                            } else {
+                                params[key] = [params[key], value];
+                            }
+                        } else {
+                            params[key] = value;
+                        }
+                    }
                 }
             }
 
@@ -116,6 +148,9 @@
     <div class="top">
         <div class="toolbar">
             <button id="parserBtn" class="btn" onclick="doParse()">파싱</button>
+            <label for="URLDecode" class="checkbox-label">
+                <input type="checkbox" id="URLDecode" onchange="doParse()"> URL Decode
+            </label>
         </div>
         <textarea id="urlInput" name="urlInput" spellcheck="false" placeholder="분석할 URL을 여기에 입력하세요."></textarea>
     </div>

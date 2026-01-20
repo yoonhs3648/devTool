@@ -141,7 +141,7 @@ input[type="text"] {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-input[type="text"]:focus {
+input[type="text"]:not([readonly]):focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
@@ -516,4 +516,50 @@ input[type="range"]::-moz-range-track {
     background: #254f73;
     border: 2px solid #888;
     cursor: pointer;
+}
+
+/* 파일 업로드 */
+.file-upload {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    padding: 12px 16px;
+    border: 1px solid #b0b0b0;
+    border-radius: 6px;
+    background-color: #cccccc;
+}
+.file-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.6;
+}
+.file-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000000;
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.file-size,
+.file-ext {
+    font-size: 13px;
+    color: #1f1f1f;
+}
+.file-empty {
+    font-size: 14px;
+    color: #888;
+}
+.btn-delete {
+    border: none;
+    background-color: #666;
+    margin-left: auto;
+}
+
+.btn-delete:hover {
+    border: none;
+    background-color: #444;
 }
