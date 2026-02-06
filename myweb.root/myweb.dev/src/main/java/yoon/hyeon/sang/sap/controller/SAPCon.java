@@ -3,13 +3,23 @@ package yoon.hyeon.sang.sap.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.sap.conn.jco.JCoDestination;
 import com.sap.conn.jco.JCoException;
 import com.sap.conn.jco.JCoFunction;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,7 +31,10 @@ import yoon.hyeon.sang.sap.SapJcoUtil;
 import yoon.hyeon.sang.sap.dto.RFCFunctionMetaData;
 import yoon.hyeon.sang.sap.service.SAPSvc;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -207,5 +220,42 @@ public class SAPCon {
         }
 
         return result;
+    }
+
+    @RequestMapping(value = "/makeInterfaceExcel", method = RequestMethod.POST)
+    public void makeInterfaceExcel(@RequestBody Map<String, Object> params, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        Map<String, Object> result = new HashMap<>();
+
+        String jsonStr = (String) params.get("data");
+
+        try {
+            Workbook workbook = SAPSvc.makeInterfaceExcel(jsonStr);
+
+            JsonObject jsonObj = gson.fromJson(jsonStr, JsonObject.class);
+            String functionName = jsonObj.get("functionName").getAsString();
+            functionName = functionName.concat("_인터페이스_명세서");
+            String encodedFileName = URLEncoder.encode(functionName, "UTF-8").replaceAll("\\+", "%20");
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            workbook.write(bos);
+            workbook.close();
+
+            response.setHeader("Content-Disposition","attachment; filename=\"" + encodedFileName + "\"");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            try (ServletOutputStream out = response.getOutputStream()) {
+                out.write(bos.toByteArray());
+                out.flush();
+            }
+        } catch(Exception e) {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+
+            result.put("status", "ERROR");
+            result.put("message", e.getMessage());
+            result.put("detailMessage", e.getCause() != null ? e.getCause().getMessage() : "");
+            String json = gson.toJson(result);
+            response.getWriter().write(json);
+        }
     }
 }

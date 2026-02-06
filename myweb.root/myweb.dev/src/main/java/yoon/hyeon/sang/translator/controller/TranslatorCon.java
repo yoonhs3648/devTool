@@ -80,7 +80,7 @@ public class TranslatorCon {
 
         //파일명 설정
         String originalName = file.getOriginalFilename();
-        String downloadName = "translated_" + originalName;
+        String downloadName = "(" + targetLang + ")" + originalName;
 
         result.put("originalName", originalName);
         result.put("downloadName", downloadName);

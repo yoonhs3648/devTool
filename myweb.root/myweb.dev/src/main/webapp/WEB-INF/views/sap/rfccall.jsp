@@ -520,6 +520,11 @@
             setExportScalaRows(exportParamsArr.filter(item => item.dataType === "STRING"));
             setExportStructureRows(exportParamsArr.filter(item => item.dataType === "STRUCTURE"))
 
+            //excel변환 활성화
+            $('#interfaceExcel').css("display", "block");
+            $('#firstOuterBox').css("margin-top", "20px");
+            $('#interfaceJson').val(JSON.stringify(data));
+
             showMessage(`✅ [\${functionName}] 바인딩 완료`);
         })
         .catch(error => {
@@ -1072,6 +1077,68 @@
         $(el).toggleClass('open');
     }
 
+    //인터페이스 명세서 엑셀변환
+    function makeInterfaceExcel() {
+        const data = $('#interfaceJson').val();
+
+        myAxios.post(
+            "/dev/makeInterfaceExcel",
+            {
+                data: data
+            },
+            {
+                responseType: 'blob',
+                beforeSend: function () {
+                    showSpinner("⏳ 엑셀 생성중...");
+                }
+            }
+        )
+        .then(res => {
+            // 에러 응답(JSON)이 blob으로 오는 경우 방어
+            if (res.data.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const err = JSON.parse(reader.result);
+                    alert(err.message || '🚫 다운로드 실패');
+                };
+                reader.readAsText(res.data);
+                return;
+            }
+
+            //서버에서 내려준 파일명 추출
+            let downloadName = 'interface.xlsx';
+            const disposition = res.headers['content-disposition'];
+
+            if (disposition) {
+                const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^";]+)/i);
+                if (match && match[1]) {
+                    downloadName = decodeURIComponent(match[1]);
+                }
+            }
+
+            const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = downloadName;
+            document.body.appendChild(a);
+            a.click();
+
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            showMessage("✅ 다운로드 완료: " + downloadName);
+        })
+        .catch(error => {
+
+            showMessage("🚫 에러발생", false);
+        })
+        .finally(() => {
+            hideSpinner();
+        });
+    }
+
     function callRFC() {
         //Import파라미터 자료구조 생성
         let importParams = [];
@@ -1620,8 +1687,12 @@
             <button class="btn" style="width: 80%;" id="getSAPMeta" onclick="getSAPMeta()" tabindex="-1">GET RFC METADATA</button>
         </div>
 
+        <div id="interfaceExcel" style="display: none; overflow: hidden;">
+            <button style="float: left;" class="btn" onclick="makeInterfaceExcel()" tabindex="-1">Excel</button>
+        </div>
+
         <!-- IMPORT파라미터 시작-->
-        <div class="outer-box">
+        <div class="outer-box" id="firstOuterBox">
             <div class="section-header">
                 <span id="importTab" onclick="toggleParamBox(this)">IMPORT</span>
             </div>
@@ -1755,4 +1826,6 @@
         </div>
     </div>
 </div>
+<input type="hidden" id="interfaceJson"/>
+<input type="hidden" id="resultJson"/>
 
