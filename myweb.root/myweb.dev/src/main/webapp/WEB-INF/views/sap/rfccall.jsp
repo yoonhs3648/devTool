@@ -1079,6 +1079,9 @@
 
     //인터페이스 명세서 엑셀변환
     function makeInterfaceExcel() {
+        const fnName = $("input[name=rfcfnc]").val().trim();
+        if (!confirm(`[\${fnName}] 인터페이스명세서를 엑셀로 만들까요?`)) return;
+
         const data = $('#interfaceJson').val();
 
         myAxios.post(
@@ -1687,11 +1690,12 @@
             <button class="btn" style="width: 80%;" id="getSAPMeta" onclick="getSAPMeta()" tabindex="-1">GET RFC METADATA</button>
         </div>
 
-        <div id="interfaceExcel" style="display: none; overflow: hidden;">
-            <button style="float: left;" class="btn" onclick="makeInterfaceExcel()" tabindex="-1">Excel</button>
-        </div>
-
         <!-- IMPORT파라미터 시작-->
+        <div class="param-Container">
+            <div id="interfaceExcel" style="display: none; overflow: hidden;">
+                <button style="float: right;" class="btn" onclick="makeInterfaceExcel()" tabindex="-1">MakeExcel</button>
+            </div>
+
         <div class="outer-box" id="firstOuterBox">
             <div class="section-header">
                 <span id="importTab" onclick="toggleParamBox(this)">IMPORT</span>
@@ -1813,6 +1817,7 @@
             <!-- 구조체 파라미터 끝-->
         </div>
         <!-- EXPORT파라미터 끝-->
+        </div>
     </div>
     <div class="middle">
         <button class='hide-btn' style="width:15px;" onclick="showLeftContainer(this)" tabindex="-1"><</button>

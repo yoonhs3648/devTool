@@ -9,6 +9,7 @@ public class ExcelUtil {
         CellStyle style = headerCenterStyle(workbook, true);
         style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);    //줄바꿈허용
         setMediumBorder(style);
         return style;
     }
@@ -16,6 +17,7 @@ public class ExcelUtil {
         CellStyle style = headerCenterStyle(workbook, true);
         style.setFillForegroundColor(color.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setWrapText(true);    //줄바꿈허용
         setMediumBorder(style);
         return style;
     }

@@ -10,6 +10,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import yoon.hyeon.sang.excel.ExcelUtil;
 import yoon.hyeon.sang.sap.service.SAPSvc;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -21,20 +23,44 @@ public class SAPSvcImpl implements SAPSvc {
         try {
             JsonObject jsonObj = gson.fromJson(jsonStr, JsonObject.class);
 
-            List<JsonObject> importParams =
-                    gson.fromJson(jsonObj.getAsJsonArray("importParams"),
-                            new TypeToken<List<JsonObject>>(){}.getType());
+            String functionName = jsonObj.get("functionName").getAsString();
 
-            List<JsonObject> exportParams =
-                    gson.fromJson(jsonObj.getAsJsonArray("exportParams"),
-                            new TypeToken<List<JsonObject>>(){}.getType());
+            JsonArray importParamsArray = jsonObj.getAsJsonArray("importParams");
+            List<JsonObject> importParams = new ArrayList<>();
+            List<JsonObject> importStParams = new ArrayList<>();
+            for (JsonElement el : importParamsArray) {
+                JsonObject param = el.getAsJsonObject();
+
+                String dataType = param.get("dataType").getAsString();
+
+                if ("STRUCTURE".equalsIgnoreCase(dataType)) {
+                    importStParams.add(param);
+                } else {
+                    importParams.add(param);
+                }
+            }
+
+            JsonArray exportParamsArray = jsonObj.getAsJsonArray("exportParams");
+            List<JsonObject> exportParams = new ArrayList<>();
+            List<JsonObject> exportstParams = new ArrayList<>();
+            for (JsonElement el : exportParamsArray) {
+                JsonObject param = el.getAsJsonObject();
+
+                String dataType = param.get("dataType").getAsString();
+
+                if ("STRUCTURE".equalsIgnoreCase(dataType)) {
+                    exportstParams.add(param);
+                } else {
+                    exportParams.add(param);
+                }
+            }
 
             List<JsonObject> tableParams =
                     gson.fromJson(jsonObj.getAsJsonArray("tableParams"),
                             new TypeToken<List<JsonObject>>(){}.getType());
 
             Workbook workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("인터페이스 명세서");
+            Sheet sheet = workbook.createSheet(functionName + "_인터페이스 명세서");
 
             // 스타일
             ExcelUtil excelUtil = new ExcelUtil();
@@ -62,16 +88,15 @@ public class SAPSvcImpl implements SAPSvc {
             int rowIdx = 1; // B2 시작
             int colOffset = 1;
 
-            // ===== Header =====
+            // Header
             Row header = sheet.createRow(rowIdx++);
             for (int i = 0; i < headers.length; i++) {
                 createCell(header, colOffset + i, headers[i], headerStyle, maxColWidth, i);
             }
 
-            // ===== Import =====
+            // Import
             int importStart = rowIdx;
             int seq = 1;
-
             for (JsonObject p : importParams) {
                 Row row = sheet.createRow(rowIdx++);
 
@@ -92,14 +117,45 @@ public class SAPSvcImpl implements SAPSvc {
                         getStr(p, "description")
                 );
             }
-
             excelUtil.mergeAndStyle(sheet, importStart, rowIdx - 1, colOffset, importHeaderStyle);
 
-            // ===== Table =====
-            int tableStart = rowIdx;
+            // Import structure
+            for (JsonObject fields : importStParams) {
+                String stName = getStr(fields, "name");
+                String stDesc = getStr(fields, "description");
 
+                JsonArray field = fields.getAsJsonArray("fields");
+                int importStStart = rowIdx;
+                seq = 1;
+                for (JsonElement el : field) {
+                    JsonObject f = el.getAsJsonObject();
+                    Row row = sheet.createRow(rowIdx++);
+
+                    String decimals = "";
+                    String decimalInfo = getStr(f, "decimals");
+                    if (decimalInfo != null && !"0".equals(decimalInfo)) {
+                        decimals = decimalInfo;
+                    }
+
+                    writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
+                            "Import (" + stName + ")\n" + "(Description: " + stDesc + ")",
+                            String.valueOf(seq++),
+                            getStr(f, "name"),
+                            getStr(f, "sapType"),
+                            getStr(f, "length"),
+                            decimals,
+                            "",
+                            getStr(f, "description")
+                    );
+                }
+                excelUtil.mergeAndStyle(sheet, importStStart, rowIdx - 1, colOffset, importHeaderStyle);
+            }
+
+            // Table
             for (JsonObject table : tableParams) {
                 JsonArray fields = table.getAsJsonArray("fields");
+                int tableStart = rowIdx;
+                seq = 1;
 
                 for (JsonElement el : fields) {
                     JsonObject f = el.getAsJsonObject();
@@ -113,7 +169,7 @@ public class SAPSvcImpl implements SAPSvc {
 
                     writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
                             "Table",
-                            "",
+                            String.valueOf(seq++),
                             getStr(f, "name"),
                             getStr(f, "sapType"),
                             getStr(f, "length"),
@@ -122,14 +178,12 @@ public class SAPSvcImpl implements SAPSvc {
                             getStr(f, "description")
                     );
                 }
+                excelUtil.mergeAndStyle(sheet, tableStart, rowIdx - 1, colOffset, tableHeaderStyle);
             }
 
-            excelUtil.mergeAndStyle(sheet, tableStart, rowIdx - 1, colOffset, tableHeaderStyle);
-
-            // ===== Export =====
+            // Export
             int exportStart = rowIdx;
             seq = 1;
-
             for (JsonObject p : exportParams) {
                 Row row = sheet.createRow(rowIdx++);
 
@@ -150,10 +204,42 @@ public class SAPSvcImpl implements SAPSvc {
                         getStr(p, "description")
                 );
             }
-
             excelUtil.mergeAndStyle(sheet, exportStart, rowIdx - 1, colOffset, exportHeaderStyle);
 
-            // ===== Column Width =====
+            // Export structure
+            for (JsonObject fields : exportstParams) {
+                String stName = getStr(fields, "name");
+                String stDesc = getStr(fields, "description");
+                JsonArray field = fields.getAsJsonArray("fields");
+                int exportStStart = rowIdx;
+                seq = 1;
+
+                for (JsonElement el : field) {
+                    JsonObject f = el.getAsJsonObject();
+                    Row row = sheet.createRow(rowIdx++);
+
+                    String decimals = "";
+                    String decimalInfo = getStr(f, "decimals");
+                    if (decimalInfo != null && !"0".equals(decimalInfo)) {
+                        decimals = decimalInfo;
+                    }
+
+                    writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
+                            "Export (" + stName + ")\n" + "(Description: " + stDesc + ")",
+                            String.valueOf(seq++),
+                            getStr(f, "name"),
+                            getStr(f, "sapType"),
+                            getStr(f, "length"),
+                            decimals,
+                            "",
+                            getStr(f, "description")
+                    );
+                }
+
+                excelUtil.mergeAndStyle(sheet, exportStStart, rowIdx - 1, colOffset, exportHeaderStyle);
+            }
+
+            // Column Width
             for (int i = 0; i < headers.length; i++) {
                 sheet.setColumnWidth(colOffset + i, (maxColWidth[i] + 2) * 256);
             }

@@ -94,7 +94,7 @@ public class SAPCon {
 
             //SapJcoUtil.setImportStructureParamForTest(rfcMeta); //Import파라미터에 임의의 구조체파라미터 추가하는 test코드
             //SapJcoUtil.setExportStructureParamForTest(rfcMeta); //Export파라미터에 임의의 구조체파라미터 추가하는 test코드
-            //SapJcoUtil.setTableParamForTest(rfcMeta); //Export파라미터에 임의의 구조체파라미터 추가하는 test코드
+            //SapJcoUtil.setTableParamForTest(rfcMeta); //table파라미터 추가하는 test코드
 
             result.put("functionName", rfcMeta.getFunctionName());
             result.put("importParams", rfcMeta.getImportParams());
