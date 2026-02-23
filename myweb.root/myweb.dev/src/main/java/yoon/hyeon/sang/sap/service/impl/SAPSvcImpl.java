@@ -144,7 +144,7 @@ public class SAPSvcImpl implements SAPSvc {
                             getStr(f, "sapType"),
                             getStr(f, "length"),
                             decimals,
-                            "",
+                            "I",
                             getStr(f, "description")
                     );
                 }
@@ -231,7 +231,7 @@ public class SAPSvcImpl implements SAPSvc {
                             getStr(f, "sapType"),
                             getStr(f, "length"),
                             decimals,
-                            "",
+                            "O",
                             getStr(f, "description")
                     );
                 }
