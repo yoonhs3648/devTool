@@ -61,6 +61,20 @@
             <version>4.3.30.RELEASE</version>
         </dependency>-->
 
+        <!-- Spring JDBC -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>5.3.33</version>
+        </dependency>
+
+        <!-- Spring Transaction -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>5.3.33</version>
+        </dependency>
+
         <!-- Servlet API (provided로 지정) -->
         <!-- Servlet4.0.x 은 톰캣8.5이상 필수 -->
         <!-- Tomcat7은 Servlet3.0 까지만 지원 -->
@@ -243,6 +257,64 @@
             <version>2.15.1</version>
         </dependency>
 
+        <!-- JDBC 관련 -->
+        <!-- MyBatis -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.15</version>
+        </dependency>
+
+        <!-- MyBatis Spring 연동 for Java 8,11 (17은 지원안함)-->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+
+        <!-- MariaDB Driver for Java 8 -->
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>2.7.9</version>
+        </dependency>
+
+        <!-- MariaDB Driver for Java 11 -->
+        <!--<dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.3.2</version>
+        </dependency>-->
+
+        <!-- HikariCP for Java 8 -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>4.0.3</version>
+        </dependency>
+
+        <!-- HikariCP for Java 11-->
+        <!--<dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>-->
+        <!-- JDBC end -->
+
+        <!-- Liquibase -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <version>4.27.0</version>
+        </dependency>
+
+        <!-- H2 (임시 DB용) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -261,6 +333,16 @@
                         <encoding>UTF-8</encoding>
                     </configuration>
                 </plugin>
+                <!-- Java 11 컴파일 설정 -->
+                <!--<plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <release>11</release>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>-->
             </plugins>
         </pluginManagement>
         <plugins>
@@ -273,6 +355,22 @@
                 </configuration>
             </plugin>
         </plugins>
+        <!-- Java 11 compiler 플러그인 -->
+        <!--<plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <outputDirectory>war</outputDirectory>
+                </configuration>
+            </plugin>
+        </plugins>-->
     </build>
 
 </project>

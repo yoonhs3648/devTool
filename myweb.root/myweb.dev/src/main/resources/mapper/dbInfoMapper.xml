@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dbInfo">
+
+    <!-- 모든 데이터베이스 조회 -->
+    <select id="selectAllDBs" resultType="string">
+        SELECT schema_name
+        FROM information_schema.schemata
+        WHERE schema_name NOT IN (
+          'information_schema',
+          'mysql',
+          'performance_schema',
+          'sys'
+        )
+    </select>
+
+    <!-- 데이터베이스 내 모든 테이블, 뷰, 루틴(프로시저,함수), 트리거, 이벤트의 SHOW CREATE 구문 생성 -->
+    <select id="selectAllObjects" resultType="map">
+        SELECT 'TABLE' AS OBJ_TYPE, table_name AS OBJ_NAME
+        FROM information_schema.tables
+        WHERE table_schema = #{schema}
+          AND table_type = 'BASE TABLE'
+
+        UNION ALL
+
+        SELECT 'VIEW', table_name
+        FROM information_schema.views
+        WHERE table_schema = #{schema}
+
+        UNION ALL
+
+        SELECT ROUTINE_TYPE, ROUTINE_NAME
+        FROM information_schema.routines
+        WHERE ROUTINE_SCHEMA = #{schema}
+
+        UNION ALL
+
+        SELECT 'TRIGGER', trigger_name
+        FROM information_schema.triggers
+        WHERE trigger_schema = #{schema}
+
+        UNION ALL
+
+        SELECT 'EVENT', event_name
+        FROM information_schema.events
+        WHERE event_schema = #{schema}
+    </select>
+
+    <select id="selectDDL" resultType="map">
+        ${query}
+    </select>
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    <<Service코드>>
+
+    1. 단건 조회
+    public Map<String, Object> getUser(String id) {
+        return sqlSession.selectOne("user.getUser", id);    // 단건 조회는 selectOne() 메서드 사용 (결과가 여러 행이면 예외 발생. 한 행에 컬럼이 몇개든 상관없다 => id는 유니크한 값이여서 하나의 행만 조회할 수 있어야한다)
+    }
+
+    2. 여러 행 조회
+    public List<Map<String, Object>> getUserList() {
+        return sqlSession.selectList("user.getUserList");
+    }
+
+    3. INSERT
+    public int insertUser(String name, String email) {
+
+        Map<String, Object> param = new HashMap<>();
+        param.put("name", name);
+        param.put("email", email);
+
+        return sqlSession.insert("user.insertUser", param);
+    }
+
+    4. UPDATE
+    public int updateUser(int id, String name, String email) {
+
+        Map<String, Object> param = new HashMap<>();
+        param.put("id", id);
+        param.put("name", name);
+        param.put("email", email);
+
+        return sqlSession.update("user.updateUser", param);
+    }
+
+    5. DELETE
+    public int deleteUser(int id) {
+        return sqlSession.delete("user.deleteUser", id);
+    }
+
+-->
+<mapper namespace="user">
+
+    <select id="getUserCount" resultType="int">
+        SELECT COUNT(1) FROM covi_smart4j.sys_object_user limit 1
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="getUser" parameterType="string" resultType="map">
+        SELECT UserCode, EmpNo, DisplayName
+        FROM covi_smart4j.sys_object_user
+        WHERE UserCode = #{UserCode}
+    </select>
+
+    <!-- 여러 행 조회 -->
+    <select id="getUserList" resultType="map">
+        SELECT UserCode, EmpNo, DisplayName
+        FROM covi_smart4j.sys_object_user
+        limit 50
+    </select>
+
+    <!-- insert -->
+    <insert id="insertUser" parameterType="map">
+        INSERT INTO testTable (tesCol1, tesCol2)
+        VALUES (#{tesCol1}, #{tesCol2})
+    </insert>
+
+    <!-- update -->
+    <update id="updateUser" parameterType="map">
+        UPDATE testTable
+        SET tesCol1 = #{tesCol1},
+            tesCol2 = #{tesCol2}
+        WHERE id = #{id}
+    </update>
+
+    <!-- delete -->
+    <delete id="deleteUser" parameterType="int">
+        DELETE FROM testTable
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -64,6 +64,7 @@
                 <li><a href="encrypter">Encrypter/Decrypter</a></li>
                 <li><a href="htmlViewer">HTML Viewer</a></li>
                 <li><a href="sap">SAP RFC Call</a></li>
+                <li><a href="dbSyncer">DB Syncer</a></li>
             </ul>
         </nav>
     </div>
