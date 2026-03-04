@@ -10,6 +10,7 @@ import yoon.hyeon.sang.sap.dto.RFCFunctionMetaData;
 import yoon.hyeon.sang.sap.dto.RFCParamMetaData;
 import yoon.hyeon.sang.sap.dto.SAPEnums;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -73,21 +74,51 @@ public class SapJcoUtil {
             throw new RuntimeException("RFC 함수 없음: " + functionName);
         }
 
+        JCoFunctionTemplate template = function.getFunctionTemplate();
+
         RFCFunctionMetaData meta = new RFCFunctionMetaData();
         meta.setFunctionName(functionName);
 
-        meta.setImportParams(extractParams(function.getImportParameterList(), SAPEnums.RFCParamKind.IMPORT));
-        meta.setExportParams(extractParams(function.getExportParameterList(), SAPEnums.RFCParamKind.EXPORT));
-        meta.setTableParams(extractParams(function.getTableParameterList(), SAPEnums.RFCParamKind.TABLE));
+        //함수에 대한 주석을 바인딩
+        meta.setFunctionDescription(getFunctionDescription(template));
+
+        //IMPORT, EXPORT, TABLE 파라미터 추출 및 바인딩
+        meta.setImportParams(extractParams(template.getImportParameterList(), SAPEnums.RFCParamKind.IMPORT));
+        meta.setExportParams(extractParams(template.getExportParameterList(), SAPEnums.RFCParamKind.EXPORT));
+        meta.setTableParams(extractParams(template.getTableParameterList(), SAPEnums.RFCParamKind.TABLE));
 
         return meta;
     }
 
-    private static List<RFCParamMetaData> extractParams(JCoParameterList paramList, SAPEnums.RFCParamKind kind) {
-        List<RFCParamMetaData> result = new ArrayList<>();
-        if (paramList == null) return result;
+    private static String getFunctionDescription(JCoFunctionTemplate template) {
+        //JCoFunction에서 함수 설명(주석)을 가져오는 방법은 공식적으로 제공되지 않음
+        //일부 SAP 시스템에서는 RFC 함수의 주석이 template > comment에 저장되어 있을 수 있지만, 이는 보장되지 않음
+        try {
+            Class<?> clazz = template.getClass();
 
-        JCoMetaData meta = paramList.getMetaData();
+            while (clazz != null) {
+                try {
+                    Field commentField = clazz.getDeclaredField("comment");
+                    commentField.setAccessible(true);
+
+                    Object value = commentField.get(template);
+                    return value != null ? value.toString() : "";
+
+                } catch (NoSuchFieldException e) {
+                    clazz = clazz.getSuperclass(); // 상위 클래스 탐색
+                }
+            }
+
+        } catch (Exception e) {
+            // 주석을 가져오는 중 오류 발생 시 무시하고 빈 문자열 반환
+        }
+
+        return "";
+    }
+
+    private static List<RFCParamMetaData> extractParams(JCoListMetaData meta, SAPEnums.RFCParamKind kind) {
+        List<RFCParamMetaData> result = new ArrayList<>();
+        if (meta == null) return result;
 
         for (int i = 0; i < meta.getFieldCount(); i++) {
             String paramName = meta.getName(i);
@@ -97,19 +128,20 @@ public class SapJcoUtil {
             param.setName(paramName);
             param.setDescription(meta.getDescription(i));
             param.setKind(kind);
-            param.setMandatory(SAPEnums.MandatoryType.UNKNOWN);     //필수여부는 JCoMetaData에서 제공하지않음
+            boolean optional = meta.isOptional(i);
+            param.setMandatory(optional ? SAPEnums.MandatoryType.OPTIONAL : SAPEnums.MandatoryType.REQUIRED);
 
             if (type == JCoMetaData.TYPE_STRUCTURE) {   // STRUCTURE
                 param.setDataType(SAPEnums.RFCDataType.STRUCTURE);
 
-                JCoStructure structure = paramList.getStructure(paramName);
-                param.setFields(extractFields(structure.getMetaData()));
+                JCoRecordMetaData recordMeta = meta.getRecordMetaData(i);
+                param.setFields(extractFields(recordMeta));
             }
             else if (type == JCoMetaData.TYPE_TABLE) {  // TABLE
                 param.setDataType(SAPEnums.RFCDataType.TABLE);
 
-                JCoTable table = paramList.getTable(paramName);
-                param.setFields(extractFields(table.getMetaData()));
+                JCoRecordMetaData tableMeta = meta.getRecordMetaData(i);
+                param.setFields(extractFields(tableMeta));
             }
             else {  // String
                 param.setDataType(SAPEnums.RFCDataType.STRING);
@@ -124,7 +156,7 @@ public class SapJcoUtil {
         return result;
     }
 
-    private static List<RFCFieldMetaData> extractFields(JCoMetaData meta) {
+    private static List<RFCFieldMetaData> extractFields(JCoRecordMetaData meta) {
         List<RFCFieldMetaData> fields = new ArrayList<>();
 
         for (int i = 0; i < meta.getFieldCount(); i++) {
@@ -303,19 +335,17 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s1f1 = new RFCFieldMetaData();
         s1f1.setName("TEST_FIELD_A");
-        s1f1.setDescription("아무 의미 없는 값 A");
+        s1f1.setDescription("테스트용 구조체 1 아무 의미 없는 값 A");
         s1f1.setSapType("CHAR");
         s1f1.setLength(10);
         s1f1.setDecimals(0);
-        s1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s1f2 = new RFCFieldMetaData();
         s1f2.setName("TEST_FIELD_B");
-        s1f2.setDescription("아무 의미 없는 값 B");
+        s1f2.setDescription("테스트용 구조체 1 아무 의미 없는 값 B 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 ");
         s1f2.setSapType("NUMC");
         s1f2.setLength(6);
         s1f2.setDecimals(0);
-        s1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct1Fields.add(s1f1);
         struct1Fields.add(s1f2);
@@ -333,19 +363,17 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s2f1 = new RFCFieldMetaData();
         s2f1.setName("FAKE_NUMBER");
-        s2f1.setDescription("숫자인척하는 값");
+        s2f1.setDescription("테스트용 구조체 2 아무 의미 없는 값 A");
         s2f1.setSapType("CURR");
         s2f1.setLength(15);
         s2f1.setDecimals(3);
-        s2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s2f2 = new RFCFieldMetaData();
         s2f2.setName("FAKE_TEXT");
-        s2f2.setDescription("문자인척하는 값");
+        s2f2.setDescription("테스트용 구조체 2 아무 의미 없는 값 B값");
         s2f2.setSapType("CHAR");
         s2f2.setLength(20);
         s2f2.setDecimals(0);
-        s2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct2Fields.add(s2f1);
         struct2Fields.add(s2f2);
@@ -364,27 +392,24 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s3f1 = new RFCFieldMetaData();
         s3f1.setName("DUMMY_ID");
-        s3f1.setDescription("아이디인척 하는 값");
+        s3f1.setDescription("테스트용 구조체 3 아무 의미 없는 값 A");
         s3f1.setSapType("CHAR");
         s3f1.setLength(30);
         s3f1.setDecimals(0);
-        s3f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s3f2 = new RFCFieldMetaData();
         s3f2.setName("DUMMY_NAME");
-        s3f2.setDescription("이름인척 하는 값");
+        s3f2.setDescription("테스트용 구조체 3 아무 의미 없는 값 B");
         s3f2.setSapType("CHAR");
         s3f2.setLength(50);
         s3f2.setDecimals(0);
-        s3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s3f3 = new RFCFieldMetaData();
         s3f3.setName("DUMMY_DATE");
-        s3f3.setDescription("날짜인척 하는 값");
+        s3f3.setDescription("테스트용 구조체 3 아무 의미 없는 값 C");
         s3f3.setSapType("DATS");
         s3f3.setLength(8);
         s3f3.setDecimals(0);
-        s3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct3Fields.add(s3f1);
         struct3Fields.add(s3f2);
@@ -417,19 +442,17 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s1f1 = new RFCFieldMetaData();
         s1f1.setName("TEST_FIELD_export_A");
-        s1f1.setDescription("export아무 의미 없는 값 A");
+        s1f1.setDescription("export테스트용 구조체 1 값 A");
         s1f1.setSapType("CHAR");
         s1f1.setLength(10);
         s1f1.setDecimals(0);
-        s1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s1f2 = new RFCFieldMetaData();
         s1f2.setName("TEST_FIELD_export_B");
-        s1f2.setDescription("export아무 의미 없는 값 B");
+        s1f2.setDescription("export테스트용 구조체 1 값 B");
         s1f2.setSapType("NUMC");
         s1f2.setLength(6);
         s1f2.setDecimals(0);
-        s1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct1Fields.add(s1f1);
         struct1Fields.add(s1f2);
@@ -447,19 +470,17 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s2f1 = new RFCFieldMetaData();
         s2f1.setName("FAKE_NUMBER_export");
-        s2f1.setDescription("export숫자인척하는 값");
+        s2f1.setDescription("export테스트용 구조체 2 값 A 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 ");
         s2f1.setSapType("CURR");
         s2f1.setLength(15);
         s2f1.setDecimals(3);
-        s2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s2f2 = new RFCFieldMetaData();
         s2f2.setName("FAKE_TEXT_export123");
-        s2f2.setDescription("문자인척하는 값export");
+        s2f2.setDescription("export테스트용 구조체 2 값 B");
         s2f2.setSapType("CHAR");
         s2f2.setLength(20);
         s2f2.setDecimals(0);
-        s2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct2Fields.add(s2f1);
         struct2Fields.add(s2f2);
@@ -478,27 +499,24 @@ public class SapJcoUtil {
 
         RFCFieldMetaData s3f1 = new RFCFieldMetaData();
         s3f1.setName("exportDUMMY_ID");
-        s3f1.setDescription("export 아이디인척 하는 값");
+        s3f1.setDescription("export테스트용 구조체 3 값 A");
         s3f1.setSapType("CHAR");
         s3f1.setLength(30);
         s3f1.setDecimals(0);
-        s3f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s3f2 = new RFCFieldMetaData();
         s3f2.setName("DUMMY_NAME");
-        s3f2.setDescription("이름인척 하는 값export");
+        s3f2.setDescription("export테스트용 구조체 3 값 B");
         s3f2.setSapType("CHAR");
         s3f2.setLength(50);
         s3f2.setDecimals(0);
-        s3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData s3f3 = new RFCFieldMetaData();
         s3f3.setName("export123DUMMY_DATE");
-        s3f3.setDescription("날짜인척 하는 값export");
+        s3f3.setDescription("export테스트용 구조체 3 값 C");
         s3f3.setSapType("DATS");
         s3f3.setLength(8);
         s3f3.setDecimals(0);
-        s3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         struct3Fields.add(s3f1);
         struct3Fields.add(s3f2);
@@ -531,19 +549,17 @@ public class SapJcoUtil {
 
         RFCFieldMetaData t1f1 = new RFCFieldMetaData();
         t1f1.setName("ROW_IDtest");
-        t1f1.setDescription("행 IDtest");
+        t1f1.setDescription("테스트용 테이블 파라미터 1 값 A");
         t1f1.setSapType("NUMC");
         t1f1.setLength(5);
         t1f1.setDecimals(0);
-        t1f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData t1f2 = new RFCFieldMetaData();
         t1f2.setName("ROW_TEXTtest");
-        t1f2.setDescription("행 설명 텍스트");
+        t1f2.setDescription("테스트용 테이블 파라미터 1 값 B");
         t1f2.setSapType("CHAR");
         t1f2.setLength(50);
         t1f2.setDecimals(0);
-        t1f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         table1Fields.add(t1f1);
         table1Fields.add(t1f2);
@@ -561,27 +577,24 @@ public class SapJcoUtil {
 
         RFCFieldMetaData t2f1 = new RFCFieldMetaData();
         t2f1.setName("AMOUNTTest");
-        t2f1.setDescription("금액test");
+        t2f1.setDescription("테스트용 테이블 파라미터 2 값 A");
         t2f1.setSapType("CURR");
         t2f1.setLength(15);
         t2f1.setDecimals(2);
-        t2f1.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData t2f2 = new RFCFieldMetaData();
         t2f2.setName("CURRENCYTest");
-        t2f2.setDescription("통화 코드test");
+        t2f2.setDescription("테스트용 테이블 파라미터 2 값 B. 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 주석이~~~~~~~~~~!@#$% 길다 ");
         t2f2.setSapType("CHAR");
         t2f2.setLength(3);
         t2f2.setDecimals(0);
-        t2f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData t2f3 = new RFCFieldMetaData();
         t2f3.setName("DATETest");
-        t2f3.setDescription("전기일자test");
+        t2f3.setDescription("테스트용 테이블 파라미터 2 값 C");
         t2f3.setSapType("DATS");
         t2f3.setLength(8);
         t2f3.setDecimals(0);
-        t2f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         table2Fields.add(t2f1);
         table2Fields.add(t2f2);
@@ -600,27 +613,24 @@ public class SapJcoUtil {
 
         RFCFieldMetaData t3f1 = new RFCFieldMetaData();
         t3f1.setName("USER_ID");
-        t3f1.setDescription("사용자 ID");
+        t3f1.setDescription("테스트용 테이블 파라미터 3 값 A");
         t3f1.setSapType("CHAR");
         t3f1.setLength(30);
         t3f1.setDecimals(0);
-        t3f1.setMandatory(SAPEnums.MandatoryType.REQUIRED);
 
         RFCFieldMetaData t3f2 = new RFCFieldMetaData();
         t3f2.setName("USER_NAME");
-        t3f2.setDescription("사용자 이름");
+        t3f2.setDescription("테스트용 테이블 파라미터 3 값 B");
         t3f2.setSapType("CHAR");
         t3f2.setLength(50);
         t3f2.setDecimals(0);
-        t3f2.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         RFCFieldMetaData t3f3 = new RFCFieldMetaData();
         t3f3.setName("LOGIN_TIME");
-        t3f3.setDescription("로그인 시간");
+        t3f3.setDescription("테스트용 테이블 파라미터 3 값 C");
         t3f3.setSapType("TIMS");
         t3f3.setLength(6);
         t3f3.setDecimals(0);
-        t3f3.setMandatory(SAPEnums.MandatoryType.OPTIONAL);
 
         table3Fields.add(t3f1);
         table3Fields.add(t3f2);

@@ -5,6 +5,7 @@ import java.util.List;
 /// RFC 구조
 public class RFCFunctionMetaData {
     private String functionName;
+    private String functionDescription;
 
     private List<RFCParamMetaData> importParams;
     private List<RFCParamMetaData> exportParams;
@@ -19,6 +20,14 @@ public class RFCFunctionMetaData {
 
     public void setFunctionName(String functionName) {
         this.functionName = functionName;
+    }
+
+    public String getFunctionDescription() {
+        return functionDescription;
+    }
+
+    public void setFunctionDescription(String functionDescription) {
+        this.functionDescription = functionDescription;
     }
 
     public List<RFCParamMetaData> getImportParams() {

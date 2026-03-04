@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import yoon.hyeon.sang.excel.ExcelUtil;
@@ -24,6 +25,7 @@ public class SAPSvcImpl implements SAPSvc {
             JsonObject jsonObj = gson.fromJson(jsonStr, JsonObject.class);
 
             String functionName = jsonObj.get("functionName").getAsString();
+            String functionDescription = jsonObj.get("functionDescription").getAsString();
 
             JsonArray importParamsArray = jsonObj.getAsJsonArray("importParams");
             List<JsonObject> importParams = new ArrayList<>();
@@ -70,6 +72,7 @@ public class SAPSvcImpl implements SAPSvc {
             CellStyle importHeaderStyle = excelUtil.makeSectionStyle(workbook, IndexedColors.LIGHT_YELLOW);
             CellStyle tableHeaderStyle  = excelUtil.makeSectionStyle(workbook, IndexedColors.LIGHT_GREEN);
             CellStyle exportHeaderStyle = excelUtil.makeSectionStyle(workbook, IndexedColors.LIGHT_CORNFLOWER_BLUE);
+            CellStyle makeNoBorderMergeStyle = excelUtil.makeNoBorderStyle(workbook, true);
 
             // 헤더
             String[] headers = {
@@ -79,6 +82,7 @@ public class SAPSvcImpl implements SAPSvc {
                     "Type",
                     "길이",
                     "소수점",
+                    "필수여부",
                     "Input/Output",
                     "Description"
             };
@@ -87,6 +91,17 @@ public class SAPSvcImpl implements SAPSvc {
 
             int rowIdx = 1; // B2 시작
             int colOffset = 1;
+
+            // function info
+            Row funcInfoRow = sheet.createRow(rowIdx++);
+            String funcInfo = "";
+            if (functionDescription != null && !functionDescription.isEmpty()) {
+                funcInfo = functionName + " : " + functionDescription;
+            } else {
+                funcInfo = functionName;
+            }
+            createCell(funcInfoRow, colOffset, funcInfo, bodyCenterStyle, maxColWidth, 0);
+            excelUtil.horizontalMergeAndStyle(sheet, funcInfoRow.getRowNum(), colOffset, colOffset + 8, bodyCenterStyle);
 
             // Header
             Row header = sheet.createRow(rowIdx++);
@@ -106,6 +121,16 @@ public class SAPSvcImpl implements SAPSvc {
                     decimals = decimalInfo;
                 }
 
+                String mandatory = "";
+                String mandatoryInfo = getStr(p, "mandatory");
+                if (mandatoryInfo != null && !mandatoryInfo.equalsIgnoreCase("unknown")) {
+                    if (mandatoryInfo.equalsIgnoreCase("required")) {
+                        mandatory = "Y";
+                    } else if (mandatoryInfo.equalsIgnoreCase("optional")) {
+                        mandatory = "N";
+                    }
+                }
+
                 writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
                         "Import",
                         String.valueOf(seq++),
@@ -113,16 +138,27 @@ public class SAPSvcImpl implements SAPSvc {
                         getStr(p, "sapType"),
                         getStr(p, "length"),
                         decimals,
+                        mandatory,
                         "I",
                         getStr(p, "description")
                 );
             }
-            excelUtil.mergeAndStyle(sheet, importStart, rowIdx - 1, colOffset, importHeaderStyle);
+            excelUtil.verticalMergeAndStyle(sheet, importStart, rowIdx - 1, colOffset, importHeaderStyle);
 
             // Import structure
             for (JsonObject fields : importStParams) {
                 String stName = getStr(fields, "name");
                 String stDesc = getStr(fields, "description");
+
+                String mandatory = "";
+                String mandatoryInfo = getStr(fields, "mandatory");
+                if (mandatoryInfo != null && !mandatoryInfo.equalsIgnoreCase("unknown")) {
+                    if (mandatoryInfo.equalsIgnoreCase("required")) {
+                        mandatory = "Y";
+                    } else if (mandatoryInfo.equalsIgnoreCase("optional")) {
+                        mandatory = "N";
+                    }
+                }
 
                 JsonArray field = fields.getAsJsonArray("fields");
                 int importStStart = rowIdx;
@@ -138,22 +174,37 @@ public class SAPSvcImpl implements SAPSvc {
                     }
 
                     writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
-                            "Import (" + stName + ")\n" + "(Description: " + stDesc + ")",
+                            "Import (" + stName + ")\n" + "( " + stDesc + " )",
                             String.valueOf(seq++),
                             getStr(f, "name"),
                             getStr(f, "sapType"),
                             getStr(f, "length"),
                             decimals,
+                            mandatory,
                             "I",
                             getStr(f, "description")
                     );
                 }
-                excelUtil.mergeAndStyle(sheet, importStStart, rowIdx - 1, colOffset, importHeaderStyle);
+                excelUtil.verticalMergeAndStyle(sheet, importStStart, rowIdx - 1, colOffset, importHeaderStyle);    // ParamKind Merge
+                excelUtil.verticalMergeAndStyle(sheet, importStStart, rowIdx - 1, 7, makeNoBorderMergeStyle);    // Mandatory Merge
             }
 
             // Table
             for (JsonObject table : tableParams) {
                 JsonArray fields = table.getAsJsonArray("fields");
+                String tableName = getStr(table, "name");
+                String tableDesc = getStr(table, "description");
+
+                String mandatory = "";
+                String mandatoryInfo = getStr(table, "mandatory");
+                if (mandatoryInfo != null && !mandatoryInfo.equalsIgnoreCase("unknown")) {
+                    if (mandatoryInfo.equalsIgnoreCase("required")) {
+                        mandatory = "Y";
+                    } else if (mandatoryInfo.equalsIgnoreCase("optional")) {
+                        mandatory = "N";
+                    }
+                }
+
                 int tableStart = rowIdx;
                 seq = 1;
 
@@ -168,17 +219,20 @@ public class SAPSvcImpl implements SAPSvc {
                     }
 
                     writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
-                            "Table",
+                            //"Table",
+                            "Table (" + tableName + ")\n" + "( " + tableDesc + " )",
                             String.valueOf(seq++),
                             getStr(f, "name"),
                             getStr(f, "sapType"),
                             getStr(f, "length"),
                             decimals,
+                            mandatory,
                             "",
                             getStr(f, "description")
                     );
                 }
-                excelUtil.mergeAndStyle(sheet, tableStart, rowIdx - 1, colOffset, tableHeaderStyle);
+                excelUtil.verticalMergeAndStyle(sheet, tableStart, rowIdx - 1, colOffset, tableHeaderStyle);    // ParamKind Merge
+                excelUtil.verticalMergeAndStyle(sheet, tableStart, rowIdx - 1, 7, makeNoBorderMergeStyle);    // Mandatory Merge
             }
 
             // Export
@@ -193,6 +247,16 @@ public class SAPSvcImpl implements SAPSvc {
                     decimals = decimalInfo;
                 }
 
+                String mandatory = "";
+                String mandatoryInfo = getStr(p, "mandatory");
+                if (mandatoryInfo != null && !mandatoryInfo.equalsIgnoreCase("unknown")) {
+                    if (mandatoryInfo.equalsIgnoreCase("required")) {
+                        mandatory = "Y";
+                    } else if (mandatoryInfo.equalsIgnoreCase("optional")) {
+                        mandatory = "N";
+                    }
+                }
+
                 writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
                         "Export",
                         String.valueOf(seq++),
@@ -200,16 +264,28 @@ public class SAPSvcImpl implements SAPSvc {
                         getStr(p, "sapType"),
                         getStr(p, "length"),
                         decimals,
+                        mandatory,
                         "O",
                         getStr(p, "description")
                 );
             }
-            excelUtil.mergeAndStyle(sheet, exportStart, rowIdx - 1, colOffset, exportHeaderStyle);
+            excelUtil.verticalMergeAndStyle(sheet, exportStart, rowIdx - 1, colOffset, exportHeaderStyle);
 
             // Export structure
             for (JsonObject fields : exportstParams) {
                 String stName = getStr(fields, "name");
                 String stDesc = getStr(fields, "description");
+
+                String mandatory = "";
+                String mandatoryInfo = getStr(fields, "mandatory");
+                if (mandatoryInfo != null && !mandatoryInfo.equalsIgnoreCase("unknown")) {
+                    if (mandatoryInfo.equalsIgnoreCase("required")) {
+                        mandatory = "Y";
+                    } else if (mandatoryInfo.equalsIgnoreCase("optional")) {
+                        mandatory = "N";
+                    }
+                }
+
                 JsonArray field = fields.getAsJsonArray("fields");
                 int exportStStart = rowIdx;
                 seq = 1;
@@ -225,18 +301,20 @@ public class SAPSvcImpl implements SAPSvc {
                     }
 
                     writeRow(row, bodyStyle, bodyCenterStyle, maxColWidth, colOffset,
-                            "Export (" + stName + ")\n" + "(Description: " + stDesc + ")",
+                            "Export (" + stName + ")\n" + "( " + stDesc + " )",
                             String.valueOf(seq++),
                             getStr(f, "name"),
                             getStr(f, "sapType"),
                             getStr(f, "length"),
                             decimals,
+                            mandatory,
                             "O",
                             getStr(f, "description")
                     );
                 }
 
-                excelUtil.mergeAndStyle(sheet, exportStStart, rowIdx - 1, colOffset, exportHeaderStyle);
+                excelUtil.verticalMergeAndStyle(sheet, exportStStart, rowIdx - 1, colOffset, exportHeaderStyle);    // ParamKind Merge
+                excelUtil.verticalMergeAndStyle(sheet, exportStStart, rowIdx - 1, 7, makeNoBorderMergeStyle);    // Mandatory Merge
             }
 
             // Column Width
@@ -244,7 +322,7 @@ public class SAPSvcImpl implements SAPSvc {
                 sheet.setColumnWidth(colOffset + i, (maxColWidth[i] + 2) * 256);
             }
 
-            sheet.createFreezePane(colOffset, 2);
+            sheet.createFreezePane(colOffset+3, 3);   //좌측 parma1열 고정, 상단 param2행 고정
 
             return workbook;
 
@@ -265,6 +343,7 @@ public class SAPSvcImpl implements SAPSvc {
             String type,
             String length,
             String decimals,
+            String mandatory,
             String io,
             String desc
     ) {
@@ -275,8 +354,9 @@ public class SAPSvcImpl implements SAPSvc {
         createCell(row, col++, type, bodyCenterStyle, maxColWidth, 3);  //Type
         createCell(row, col++, length, bodyStyle, maxColWidth, 4);      //길이
         createCell(row, col++, decimals, bodyStyle, maxColWidth, 5);    //소수점
-        createCell(row, col++, io, bodyCenterStyle, maxColWidth, 6);    //Input/Output
-        createCell(row, col++, desc, bodyStyle, maxColWidth, 7);        //Description
+        createCell(row, col++, mandatory, bodyCenterStyle, maxColWidth, 6);    //필수여부
+        createCell(row, col++, io, bodyCenterStyle, maxColWidth, 7);    //Input/Output
+        createCell(row, col++, desc, bodyStyle, maxColWidth, 8);        //Description
     }
 
     public void createCell(

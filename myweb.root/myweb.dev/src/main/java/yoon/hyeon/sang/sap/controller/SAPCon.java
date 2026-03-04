@@ -90,6 +90,7 @@ public class SAPCon {
             //SapJcoUtil.setTableParamForTest(rfcMeta); //table파라미터 추가하는 test코드
 
             result.put("functionName", rfcMeta.getFunctionName());
+            result.put("functionDescription", rfcMeta.getFunctionDescription());
             result.put("importParams", rfcMeta.getImportParams());
             result.put("exportParams", rfcMeta.getExportParams());
             result.put("tableParams", rfcMeta.getTableParams());
@@ -98,6 +99,7 @@ public class SAPCon {
             //SAP Response Logging
             logger.debug(SAP_MAKER, "== [SAP MetaData Response Success] ==");
             logger.debug(SAP_MAKER, "functionName : {}", rfcMeta.getFunctionName());
+            logger.debug(SAP_MAKER, "functionDescription : {}", rfcMeta.getFunctionDescription());
             logger.debug(SAP_MAKER, "importParams : {}", gson.toJson(rfcMeta.getImportParams()));
             logger.debug(SAP_MAKER, "exportParams : {}", gson.toJson(rfcMeta.getExportParams()));
             logger.debug(SAP_MAKER, "tableParams : {}", gson.toJson(rfcMeta.getTableParams()));

@@ -92,6 +92,7 @@
                 <td><span name="scParamDesc" class="paramType fieldTooltip"></span></td>
                 <td><span name="scParamType" class="paramType"></span></td>
                 <td><span name="scParamLength" class="paramType"></span></td>
+                <td><span name="scParamReq" class="paramType"></span></td>
                 <td>
                     <button type="button" name="btnAdd" class="btn" onclick="addSCField()" tabindex="-1">+</button>
                     <button type="button" name="btnDel" class="btn" onclick="delField(this)" tabindex="-1">-</button>
@@ -116,6 +117,7 @@
                 </div>
                 <div style="margin-bottom:10px;">
                     <span name="imStDesc" style="margin: 5px; width:200px;"></span>
+                    <span name="imStReq" style="margin: 5px; width:200px;"></span>
                 </div>
                 <table id="structureTable_\${stIndex}" name="structureTable" style="table-layout: fixed; width: 100%;">
                     <colgroup>
@@ -130,7 +132,7 @@
                     <tr>
                         <th>KEY</th>
                         <th>VALUE</th>
-                        <th>DECS</th>  <!-- 주석 -->
+                        <th>DESC</th>  <!-- 주석 -->
                         <th>TYPE</th>  <!-- 데이터 타입 -->
                         <th>LEN</th>   <!-- 길이(+소수점) -->
                         <th></th>
@@ -181,6 +183,7 @@
                 <td><span name="scParamDescEX" class="paramType fieldTooltip"></span></td>
                 <td><span name="scParamTypeEX" class="paramType"></span></td>
                 <td><span name="scParamLengthEX" class="paramType"></span></td>
+                <td><span name="scParamReqEX" class="paramType"></span></td>
                 <td>
                     <!--<button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()" tabindex="-1">+</button>-->
                     <!--<button type="button" name="btnDel" class="btn" onclick="delField(this)" tabindex="-1">-</button>-->
@@ -206,6 +209,7 @@
                 </div>
                 <div style="margin-bottom:10px;">
                     <span name="exStDesc" style="margin: 5px; width:200px;"></span>
+                    <span name="exStReq" style="margin: 5px; width:200px;"></span>
                 </div>
                 <table id="structureTableEX_\${stEXIndex}" name="structureTableEX" style="table-layout: fixed; width: 100%;">
                     <colgroup>
@@ -219,7 +223,7 @@
                     <thead>
                     <tr>
                         <th>KEY</th>
-                        <th>DECS</th>  <!-- 주석 -->
+                        <th>DESC</th>  <!-- 주석 -->
                         <th>TYPE</th>  <!-- 데이터 타입 -->
                         <th>LEN</th>   <!-- 길이(소수점) -->
                         <th></th>
@@ -277,6 +281,7 @@
                 </div>
                 <div style="margin-bottom:10px;">
                     <span name="tbDesc" style="margin: 5px; width:200px;"></span>
+                    <span name="tbReq" style="margin: 5px; width:200px;"></span>
                 </div>
             </div>
             <div class="row-index">
@@ -298,7 +303,7 @@
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>DECS</th>  <!-- 주석 -->
+                            <th>DESC</th>  <!-- 주석 -->
                             <th>TYPE</th>  <!-- 데이터 타입 -->
                             <th>LEN</th>   <!-- 길이(+소수점) -->
                             <th></th>
@@ -351,7 +356,7 @@
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>DECS</th>  <!-- 주석 -->
+                            <th>DESC</th>  <!-- 주석 -->
                             <th>TYPE</th>  <!-- 데이터 타입 -->
                             <th>LEN</th>   <!-- 길이(+소수점) -->
                             <th></th>
@@ -467,6 +472,13 @@
         }
     }
 
+    //필드의 필수여부 사용자정의 타입
+    const MandatoryEnum = Object.freeze({
+        REQUIRED: "REQUIRED",
+        OPTIONAL: "OPTIONAL",
+        UNKNOWN: "UNKNOWN"
+    });
+
     function getSAPMeta() {
         if ($('#scalaContainer input[name="scParamKey"], #structureContainer input[name="stParamKey"], #tableContainer input[name="tbParamKey"]')
                 .filter(function () { return $(this).val().trim() !== ''; })
@@ -505,9 +517,13 @@
             }
 
             const functionName = data.functionName;
+            const functionDescription = data.functionDescription;
             const importParamsArr = data.importParams;
             const tableParamsArr = data.tableParams;
             const exportParamsArr = data.exportParams;
+
+            //함수 주석세팅 (없으면 빈값)
+            setFunctionDescription(functionDescription);
 
             //import파라미터세팅
             setImportScalaRows(importParamsArr.filter(item => item.dataType === "STRING"));
@@ -534,6 +550,18 @@
         .finally(() => {
             hideSpinner();
         });
+    }
+
+    function setFunctionDescription(functionDescription) {
+        if (functionDescription.trim() === "") {
+            $('#functionDesc').text("");
+            $('#functionDescBox').css("display", "none");
+            return;
+        }
+        else {
+            $('#functionDescBox').css("display", "inline-block");
+            $('#functionDesc').text(functionDescription);
+        }
     }
 
     //import파라미터중 스칼라파라미터 세팅
@@ -600,6 +628,21 @@
             }
         });
 
+        // 필드 필수여부 정보 세팅
+        $('span[name="scParamReq"]').each(function (idx) {
+            var fieldDesc = "";
+            if (importParamsArr[idx]) {
+                if (importParamsArr[idx].mandatory === MandatoryEnum.REQUIRED) {
+                    fieldDesc = "Y";
+                } else if (importParamsArr[idx].mandatory === MandatoryEnum.OPTIONAL) {
+                    fieldDesc = "N";
+                } else {
+                    fieldDesc = "";
+                }
+                $(this).text(fieldDesc);
+            }
+        });
+
         // 필드 value값 모두 초기화
         $('input[name="scParamValue"]').val('');
     }
@@ -638,7 +681,22 @@
         // 구조체 주석 세팅
         $('span[name="imStDesc"]').each(function (idx) {
             if (importParamsArr[idx]) {
-                $(this).text("Description: " + importParamsArr[idx].description);
+                $(this).text("DESC: " + importParamsArr[idx].description);
+            }
+        });
+
+        // 구조체 필수여부 세팅
+        $('span[name="imStReq"]').each(function (idx) {
+            var fieldDesc = "";
+            if (importParamsArr[idx]) {
+                if (importParamsArr[idx].mandatory === MandatoryEnum.REQUIRED) {
+                    fieldDesc = "필수여부: Y";
+                } else if (importParamsArr[idx].mandatory === MandatoryEnum.OPTIONAL) {
+                    fieldDesc = "필수여부: N";
+                } else {
+                    fieldDesc = "필수여부: 알수없음";
+                }
+                $(this).text(fieldDesc);
             }
         });
 
@@ -766,7 +824,22 @@
         // 테이블 주석 세팅
         $('span[name="tbDesc"]').each(function (idx) {
             if (tableParamsArr[idx]) {
-                $(this).text("Description: " + tableParamsArr[idx].description);
+                $(this).text("DESC: " + tableParamsArr[idx].description);
+            }
+        });
+
+        // 구조체 필수여부 세팅
+        $('span[name="tbReq"]').each(function (idx) {
+            var fieldDesc = "";
+            if (tableParamsArr[idx]) {
+                if (tableParamsArr[idx].mandatory === MandatoryEnum.REQUIRED) {
+                    fieldDesc = "필수여부: Y";
+                } else if (tableParamsArr[idx].mandatory === MandatoryEnum.OPTIONAL) {
+                    fieldDesc = "필수여부: N";
+                } else {
+                    fieldDesc = "필수여부: 알수없음";
+                }
+                $(this).text(fieldDesc);
             }
         });
 
@@ -924,6 +997,21 @@
                 $(this).text(fieldDesc);
             }
         });
+
+        // 필드 필수여부 정보 세팅
+        $('span[name="scParamReqEX"]').each(function (idx) {
+            var fieldDesc = "";
+            if (exportParamsArr[idx]) {
+                if (exportParamsArr[idx].mandatory === MandatoryEnum.REQUIRED) {
+                    fieldDesc = "Y";
+                } else if (exportParamsArr[idx].mandatory === MandatoryEnum.OPTIONAL) {
+                    fieldDesc = "N";
+                } else {
+                    fieldDesc = "";
+                }
+                $(this).text(fieldDesc);
+            }
+        });
     }
 
     //export파라미터중 구조체파라미터 세팅
@@ -962,6 +1050,21 @@
         $('span[name="exStDesc"]').each(function (idx) {
             if (exportParamsArr[idx]) {
                 $(this).text("Description: " + exportParamsArr[idx].description);
+            }
+        });
+
+        // 구조체 필수여부 세팅
+        $('span[name="exStReq"]').each(function (idx) {
+            var fieldDesc = "";
+            if (exportParamsArr[idx]) {
+                if (exportParamsArr[idx].mandatory === MandatoryEnum.REQUIRED) {
+                    fieldDesc = "필수여부: Y";
+                } else if (exportParamsArr[idx].mandatory === MandatoryEnum.OPTIONAL) {
+                    fieldDesc = "필수여부: N";
+                } else {
+                    fieldDesc = "필수여부: 알수없음";
+                }
+                $(this).text(fieldDesc);
             }
         });
 
@@ -1683,7 +1786,10 @@
             <label for="rfcfnc" class="text-label">
                 <input style="width: 300px;" type="text" name="rfcfnc" value="">
             </label>
-            <span id="functionDesc" style="margin: 5px; width:200px;"></span>
+            <span id="functionDescBox" style="display: none;">
+                <span style="margin: 5px; width:200px;">DESC :</span>
+                <span id="functionDesc" style="margin: 5px; width:200px;"></span>
+            </span>
         </div>
 
         <div style="margin-top: 20px; text-align: center">
@@ -1710,18 +1816,20 @@
                         <colgroup>
                             <col style="width:20%" />
                             <col style="width:20%" />
-                            <col style="width:25%" />
-                            <col style="width:15%" />
-                            <col style="width:10%" />
+                            <col style="width:23%" />
+                            <col style="width:12%" />
+                            <col style="width:8%" />
+                            <col style="width:7%" />
                             <col style="width:10%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
                             <th>VALUE</th>
-                            <th>DECS</th>  <!-- 주석 -->
+                            <th>DESC</th>  <!-- 주석 -->
                             <th>TYPE</th>  <!-- 데이터 타입 -->
                             <th>LEN</th>   <!-- 길이(+소수점) -->
+                            <th>REQ</th>      <!-- 필수여부 -->
                             <th></th>
                         </tr>
                         </thead>
@@ -1732,6 +1840,7 @@
                             <td><span name="scParamDesc" class="paramType fieldTooltip"></span></td>
                             <td><span name="scParamType" class="paramType"></span></td>
                             <td><span name="scParamLength" class="paramType"></span></td>
+                            <td><span name="scParamReq" class="paramType"></span></td>
                             <td>
                                 <button type="button" name="btnAdd" class="btn" onclick="addSCField()" tabindex="-1">+</button>
                             </td>
@@ -1775,18 +1884,20 @@
                     <table id="scalaTableEX" style="table-layout: fixed; width: 100%;">
                         <colgroup>
                             <col style="width:20%" />
-                            <col style="width:25%" />
-                            <col style="width:15%" />
-                            <col style="width:10%" />
-                            <col style="width:10%" />
                             <col style="width:20%" />
+                            <col style="width:23%" />
+                            <col style="width:12%" />
+                            <col style="width:8%" />
+                            <col style="width:7%" />
+                            <col style="width:10%" />
                         </colgroup>
                         <thead>
                         <tr>
                             <th>KEY</th>
-                            <th>DECS</th>  <!-- 주석 -->
+                            <th>DESC</th>  <!-- 주석 -->
                             <th>TYPE</th>  <!-- 데이터 타입 -->
                             <th>LEN</th>   <!-- 길이(+소수점) -->
+                            <th>REQ</th>   <!-- 필수여부 -->
                             <th></th>
                             <th></th>
                         </tr>
@@ -1797,6 +1908,7 @@
                             <td><span name="scParamDescEX" class="paramType fieldTooltip"></span></td>
                             <td><span name="scParamTypeEX" class="paramType"></span></td>
                             <td><span name="scParamLengthEX" class="paramType"></span></td>
+                            <td><span name="scParamReqEX" class="paramType"></span></td>
                             <td>
                                 <%--<button type="button" name="btnAdd" class="btn" onclick="addSCFieldEX()" tabindex="-1">+</button>--%>
                             </td>
