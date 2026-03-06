@@ -1,4 +1,10 @@
-﻿#============================================================================================
+﻿#NOTICE:
+#작성자: 윤현상
+#본 스크립트는 톰캣버전8이상의 프로젝트에서는 안정화됐지만 톰캣7버전에서는 검증이 필요합니다
+#jbpm 지원은 개발중입니다
+
+
+#============================================================================================
 #============================================================================================
 # ===== TODO: 모듈 목록 및 context 매핑 (추가가 필요하면 추가하세요 ("웹모듈" = "컨텍스트경로") ) ===
 #============================================================================================
@@ -16,25 +22,25 @@ $modules = @{
 
 
 #============================================================================================
-#==========TODO: 톰캣버전 설정 (7 or 9) ======================================================
-#$TOMCAT_VERSION = "7"
-$TOMCAT_VERSION = "9"
+#=========================== 파일변경을 감지하고 자동으로 톰캣을 재기동하는 옵션 =====================
+#============================================================================================
+$IsAutoDeploy = $true           #java 파일의 변경이 있을때 자동으로 재기동
+$IsAutoMapperDeploy = $false    #mapper.xml 의 변경이 있을때 자동으로 재기동
 #============================================================================================
 #============================================================================================
 
-#============================================================================================
-# 각 웹모듈의 pom.xml에 있는 모듈의존성 추출을 위한 groupID
-$GROUP_ID = "yoon.hyeonsang"	#com.covision
-#============================================================================================
 
-
+#============================================================================================
 #============================================================================================
 # 톰캣 컨텍스트 재로드시 필요한 tomcat-user.xml의 값
 $USER_NAME = "hsyoon"
 $USER_PASSWORD = "hsyoon"
 $USER_ROLES = "manager-script,admin-gui,manager-gui"
 #============================================================================================
+#============================================================================================
 
+
+$GROUP_ID = "yoon.hyeonsang"
 
 # 인코딩 설정
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -49,11 +55,39 @@ $MAVEN_PATH       = $args[3]
 $SETTINGS_XML_PATH = $args[4]
 $TOMCAT_PATH      = $args[5]
 $WORKSPACE_PATH   = $args[6]
+$HtmlSite_PATH = $args[7]
 
 # ===== 환경변수 등록 =====
 $env:JAVA_OPTS = "$VM_Options -Dfile.encoding=UTF-8"
 $env:CATALINA_HOME = $TOMCAT_PATH
 $env:CATALINA_BASE = $TOMCAT_PATH
+
+#톰캣버전
+$TOMCAT_VERSION = 0
+$versionBat = Join-Path $TOMCAT_PATH "bin\version.bat"
+if (Test-Path $versionBat) {
+    $output = cmd /c $versionBat
+
+    foreach ($line in $output) {
+        if ($line -match "Server version:\s+Apache Tomcat/(\d+)\.(\d+)\.(\d+)") {
+            $TOMCAT_VERSION = $matches[1]
+        }
+    }
+
+    # 버전 파싱 실패 시 종료
+    if ($TOMCAT_VERSION -eq 0) {
+        Write-Host "톰캣 버전을 정상적으로 확인하지 못했습니다." -ForegroundColor Red
+        Write-Host "runner.ps1 실행을 종료합니다..." -ForegroundColor Red
+        Write-Host " Made By hsyoon" -ForegroundColor Magenta
+        exit 1
+    }
+}
+else {
+    Write-Host "톰캣버전을 확인할 수 없습니다" -ForegroundColor Red
+    Write-Host "runner.ps1 실행을 종료합니다..." -ForegroundColor Red
+    Write-Host " Made By hsyoon" -ForegroundColor Magenta
+    exit 1
+}
 
 # ===== 사용자 확인용 로그 =====
 Write-Host ""
@@ -66,6 +100,14 @@ Write-Host "메이븐 세팅xml 경로 : $SETTINGS_XML_PATH" -ForegroundColor Cy
 Write-Host "톰캣 버전 : $TOMCAT_VERSION" -ForegroundColor Cyan
 Write-Host "톰캣 경로 : $TOMCAT_PATH" -ForegroundColor Cyan
 Write-Host "WORKSPACE_PATH 경로 : $WORKSPACE_PATH" -ForegroundColor Cyan
+if (-not $HtmlSite_PATH) {
+    Write-Host "HtmlSite 경로 : 미설정" -ForegroundColor Cyan
+}
+else {
+    Write-Host "HtmlSite 경로 : $HtmlSite_PATH" -ForegroundColor Cyan
+}
+Write-Host "자동배포 : $IsAutoDeploy" -ForegroundColor Cyan
+Write-Host "mapper 자동배포 : $IsAutoMapperDeploy" -ForegroundColor Cyan
 Write-Host "CATALINA_HOME 경로 : $TOMCAT_PATH" -ForegroundColor Cyan
 Write-Host "CATALINA_BASE 경로 : $TOMCAT_PATH" -ForegroundColor Cyan
 
@@ -121,20 +163,6 @@ if ($connectorPortInUse -or $serverPortInUse) {
 │   $connectorPort 포트를 점유 중인 프로세스를 종료할까요?                                 │
 │   네:y  아니요:n                                                               │
 └────────────────────────────────────────────────────────────────────────────────┘
-￣￣￣￣￣ヽ___ノ￣￣￣￣￣￣￣￣￣
-        Ｏ
-         o
-        ,. ─冖'⌒'─､
-       ノ       ＼
-       / ,r‐へへく⌒'￢､  ヽ
-      {ノ へ._、 ,,／~  〉 ｝
-     ／プ￣￣y'¨Y´￣￣ヽ─}j=く
-    ノ /レ'>ー{___ｭーー'  ﾘ,ｲ}
-   / _勺 ｲ;；∵r===､､∴'∵;  シ 
-  ,/ └'ノ ＼  ご    ノ{ー—､__
-  人＿_/ー┬ー个-､＿＿,,.. ‐´ 〃ァーｧー＼
-. /  |／ |::::|､      〃 /:::/ ヽ
-/    |  |::::|＼､_________／ /:::/〃  |
 "@ -ForegroundColor Yellow
         Write-Host ""
         $isSucess = $false
@@ -183,7 +211,7 @@ if ($connectorPortInUse -or $serverPortInUse) {
     }
 }
 
-Start-Sleep -Seconds 5
+Start-Sleep -Seconds 2
 
 # ===== 프로젝트 전체 빌드 시작 =====
 Write-Host ""
@@ -229,16 +257,24 @@ if (Test-Path $contextPath) {
 }
 
 $moduleDependencies = @()
-Write-Host "[INFO] 웹모듈 단위로 context.xml 생성중..." -ForegroundColor Cyan
+Write-Host "[INFO] 톰캣 메이저 버전: $TOMCAT_VERSION" -ForegroundColor Cyan
+if ($TOMCAT_VERSION -ge 8) {
+    #톰캣메이저버전 8이상에서 지원하는 WebResourceRoot구조로 구성
+    Write-Host "[INFO] WebResourceRoot 기반구조로 웹모듈 단위 context.xml를 생성합니다" -ForegroundColor Cyan
+}
+else {
+    #톰캣메이저버전 8미만은 단순 classpath + WEB_INF/lib 구조로 구성
+    Write-Host "[INFO] classpath + WEB-INF/lib 구조로 웹모듈 단위 context.xml를 생성합니다" -ForegroundColor Cyan
+}
 
 foreach ($module in $modules.Keys) {
     $ctxName = $modules[$module]
     $ctxFile = "$contextPath\$ctxName.xml"
     $docBasePath = "$WORKSPACE_PATH\$module\src\main\webapp"
-    $preResourcesPath = "$WORKSPACE_PATH\$module\target\classes"
-    $postResourcesPath = ""
-    $preResourcesXml = ""
-    $virtualClassPaths = ""
+    $preResourcesPath = "$WORKSPACE_PATH\$module\target\classes"    #tomcat8 이상
+    $postResourcesPath = ""     #tomcat8 이상
+    $preResourcesXml = ""       #tomcat8 이상
+    $virtualClassPaths = ""     #tomcat8 이하
 
     Write-Host ""
     Write-Host "[INFO] $ctxName 의 context.xml를 생성합니다. -> $ctxName.xml" -ForegroundColor Cyan
@@ -258,14 +294,11 @@ foreach ($module in $modules.Keys) {
 
                 $classPath = "$WORKSPACE_PATH\$artifactId\target\classes"
 
-                if ($TOMCAT_VERSION -eq "7") {
-                    if ($virtualClassPaths -ne "") {
-                        $virtualClassPaths += ";"
-                    }
-                    $virtualClassPaths += $classPath
+                if ($TOMCAT_VERSION -ge 8) {
+                    $preResourcesXml += "		<PreResources base=`"$classPath`" className=`"org.apache.catalina.webresources.DirResourceSet`" webAppMount=`"/WEB-INF/classes`" />`r`n"
                 }
                 else {
-                    $preResourcesXml += "		<PreResources base=`"$classPath`" className=`"org.apache.catalina.webresources.DirResourceSet`" webAppMount=`"/WEB-INF/classes`" />`r`n"
+                    $virtualClassPaths += "$classPath;`r`n"
                 }
             }
         }
@@ -285,94 +318,71 @@ foreach ($module in $modules.Keys) {
         > $outputFile
 
     # 확인 로그
-    if (Test-Path $outputFile) {
-        Write-Host "[INFO] $ctxName Maven 의존성 리스트 파일: $WORKSPACE_PATH\$outputFile" -ForegroundColor Cyan
-    } else {
+    if (-not (Test-Path $outputFile)) {
         Write-Host "[ERROR] Maven dependency 조회에 실패했습니다: $module" -ForegroundColor Red
         Write-Host "[ERROR] runner.ps1 실행을 종료합니다..." -ForegroundColor Red
         Write-Host " Made By hsyoon" -ForegroundColor Magenta
         exit 1
     }
 
-    if ($TOMCAT_VERSION -ne "7") {
-        # 결과 파일에서 .jar 경로를 읽어서 PostResources 태그 생성
-        $postResourcesAdded = @()
+    # 결과 파일에서 .jar 경로를 읽어서 PostResources 태그 생성 및 virtualClassPaths 추가
 
-        Get-Content $outputFile | ForEach-Object {
+    $postResourcesAdded = @()
 
-            # 1. INFO 제거 및 trim
-            $line = $_ -replace '^\[INFO\]\s+', '' | ForEach-Object { $_.Trim() }
+    Get-Content $outputFile | ForEach-Object {
 
-            # 2. JAR 라인인지 확인
-            if ($line -match '^[^:]+:[^:]+:jar:[^:]+:(.+?):([A-Z]:\\.+\.jar)$') {
-                $scope = $matches[1]   # system, provided, compile 등
-                $jarFullPath = $matches[2]
-                $jarName = [System.IO.Path]::GetFileName($jarFullPath)
+        # 1. INFO 제거 및 trim
+        $line = $_ -replace '^\[INFO\]\s+', '' | ForEach-Object { $_.Trim() }
 
-                # 3. system / provided 제외
-                if ($scope -eq 'system' -or $scope -eq 'provided') {
+        # 2. JAR 라인인지 확인
+        if ($line -match '^[^:]+:[^:]+:jar:[^:]+:(.+?):([A-Z]:\\.+\.jar)$') {
+            $scope = $matches[1]   # system, provided, compile 등
+            $jarFullPath = $matches[2]
+            $jarName = [System.IO.Path]::GetFileName($jarFullPath)
+
+            # 3. system / provided 제외
+            if ($scope -eq 'system' -or $scope -eq 'provided') {
+                return
+            }
+
+            # 4. PreResources 및 virtualClassPaths 등록 모듈이면 건너뜀
+            if ($jarName -match '^(.+?)-[\d\.]+\.jar$') {
+                $moduleName = $matches[1]
+                if ($moduleDependencies -contains $moduleName) {
                     return
                 }
+            }
 
-                # 4. PreResources 등록 모듈이면 건너뜀
-                if ($jarName -match '^(.+?)-[\d\.]+\.jar$') {
-                    $moduleName = $matches[1]
-                    if ($moduleDependencies -contains $moduleName) {
-                        return
-                    }
-                }
-
-                # 5. 중복 체크
-                if (-not ($postResourcesAdded -contains $jarFullPath)) {
+            # 5. 중복 체크
+            if (-not ($postResourcesAdded -contains $jarFullPath)) {
+                if ($TOMCAT_VERSION -ge 8) {
                     $webAppMount = "/WEB-INF/lib/$jarName"
                     $postResourcesPath += "        <PostResources base=`"$jarFullPath`" className=`"org.apache.catalina.webresources.FileResourceSet`" webAppMount=`"$webAppMount`" />`r`n"
                     $postResourcesAdded += $jarFullPath
                 }
-            }
-        }
-
-        $contextContent = @"
-<Context docBase="$docBasePath">
-	<Resources>
-		<PreResources base="$preResourcesPath" className="org.apache.catalina.webresources.DirResourceSet" webAppMount="/WEB-INF/classes" />
-$preResourcesXml
-        $postResourcesPath
-	</Resources>
-</Context>
-"@
-    } else {
-        $packageBasePath = "$WORKSPACE_PATH\$module\target\$ctxName"
-
-        # 결과 파일에서 중복되는 jar경로를 읽어서 웹앱별 war exploded 디렉토리에서 삭제 (클래스는 중복될경우 무시되지만 웹리소스가 중복되서 삭제안하면 문제가됨)
-        Get-Content $outputFile | Where-Object { $_ -match ".*\.jar" } | ForEach-Object {
-            if ($_ -match "([A-Z]:\\[^:]+\.jar)") {
-                $jarFullPath = $matches[1]
-                $jarName = [System.IO.Path]::GetFileName($jarFullPath)
-
-                if ($jarName -match "^(.+?)-[\d\.]+\.jar$") {
-                    $moduleName = $matches[1]
-
-                    # jar 삭제
-                    if ($moduleDependencies -contains $moduleName) {
-
-                        $deleteTargetJar = "$packageBasePath\WEB-INF\lib\$jarName"
-                        if (Test-Path $deleteTargetJar) {
-                            Remove-Item -Path $deleteTargetJar -Force
-                            Write-Host "[INFO] $ctxName 의 $jarName 라이브러리 삭제 완료. -> $deleteTargetJar" -ForegroundColor Cyan
-                        } else {
-                            Write-Host "[WARN] $ctxName 의 $jarName 라이브러리 존재하지 않음: -> $deleteTargetJar" -ForegroundColor Yellow
-                        }
-                    }
+                else {
+                    $virtualClassPaths += "$jarFullPath;`r`n"
                 }
             }
         }
+    }
 
-        Write-Host "[INFO] 톰캣7.0 VirtualWebappLoader를 적용한 context.xml 생성" -ForegroundColor Cyan
-
+    if ($TOMCAT_VERSION -ge 8) {
         $contextContent = @"
-<Context docBase="$packageBasePath">
+<Context docBase="$docBasePath" reloadable="true">
+    <Resources>
+        <PreResources base="$preResourcesPath" className="org.apache.catalina.webresources.DirResourceSet" webAppMount="/WEB-INF/classes" />
+$preResourcesXml
+$postResourcesPath
+    </Resources>
+</Context>
+"@
+    }
+    else {
+        $contextContent = @"
+<Context docBase="$docBasePath" reloadable="true">
     <Loader className="org.apache.catalina.loader.VirtualWebappLoader"
-            virtualClasspath="$virtualClassPaths" />
+            virtualClasspath="$preResourcesPath;`r`n$virtualClassPaths" />
 </Context>
 "@
     }
@@ -380,6 +390,24 @@ $preResourcesXml
     # ===== context.xml파일 생성 =====
     $contextContent | Set-Content -Encoding UTF8 $ctxFile
     Write-Host "[INFO] 웹모듈의 context.xml 생성을 성공했습니다: /$ctxName -> $ctxFile" -ForegroundColor Cyan
+
+    #임시 dependency 파일 삭제
+    if (Test-Path $outputFile) {
+        Remove-Item $outputFile -Force
+    }
+}
+
+if (($SERVER_KIND -eq "groupware") -and $HtmlSite_PATH) {
+    $HtmlSitectxFile = "$contextPath\HtmlSite.xml"
+    Write-Host ""
+    Write-Host "[INFO] HtmlSite 의 context.xml를 생성합니다. -> HtmlSite.xml" -ForegroundColor Cyan
+
+    $htmlSiteContextContent = @"
+<Context docBase="$HtmlSite_PATH" reloadable="true" />
+"@
+
+    $htmlSiteContextContent | Set-Content -Encoding UTF8 $HtmlSitectxFile
+    Write-Host "[INFO] HtmlSite의 context.xml 생성을 성공했습니다: /HtmlSite -> $HtmlSitectxFile" -ForegroundColor Cyan
 }
 
 # ===== jar 모듈 컴파일 =====
@@ -420,7 +448,7 @@ $content = $content -replace '<Connector port="[^"]*"', "<Connector port=`"$conn
 if ($content -notmatch 'reuseAddress="true"') {
     $content = $content -replace '(<Connector [^>]*)(/>)', '$1 reuseAddress="true"$2'
 }
-#TODO: connector의 redirectPort는 http커넥터가 https로 리다이렉트 할때 어떤 포트로 리다이렉트 할지 지정하는 설정 -> http만 쓰는 로컬개발에서는 의미없다(겹쳐도 상관없음)
+#connector의 redirectPort는 http커넥터가 https로 리다이렉트 할때 어떤 포트로 리다이렉트 할지 지정하는 설정 -> http만 쓰는 로컬개발에서는 의미없다(겹쳐도 상관없음)
 # server.xml 업데이트
 $content | Set-Content $SERVER_XML
 
@@ -464,6 +492,9 @@ if ($content -notmatch "<user username=`"$USER_NAME`"") {
 #================================= 실시간 배포 프로세스 등록 시작 ================================
 #============================================================================================
 #============================================================================================
+if ($IsAutoDeploy)
+{
+
 Write-Host ""
 Write-Host ""
 Write-Host "[INFO] 실시간 자동 배포 프로세스를 구성합니다" -ForegroundColor Cyan
@@ -474,140 +505,6 @@ if (-not (Test-Path $deployLogDir)){
 }
 Write-Host "[INFO] 배포로그: $deployLogDir\auto-deploy.$(Get-Date -Format 'yyyy-MM-dd').log" -ForegroundColor Cyan
 Write-Host ""
-
-# ===== jar 모듈 감시 설정 =====
-foreach ($artifactId in $moduleDependencies) {
-    $sourceDir = Join-Path $WORKSPACE_PATH "$artifactId\src\main\java"
-    $logDir = $deployLogDir
-
-    Write-Host "[INFO] $artifactId 감시 등록 중..." -ForegroundColor Cyan
-
-    # 백그라운드 감시 작업
-    $script = {
-        param($artifactId, $sourceDir, $WORKSPACE_PATH, $MAVEN_PATH, $SETTINGS_XML_PATH, $logDir, $connectorPort, $modules, $USER_NAME, $USER_PASSWORD)
-
-        #auto-deploy 로그 기록
-        function Write-DeployLog($message) {
-            $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            $datePart = Get-Date -Format "yyyy-MM-dd"
-            $deployLogFileName = "auto-deploy.$datePart.log"
-            $deployLogPath = Join-Path $logDir $deployLogFileName
-            "[$timestamp] $message" | Out-File -Append -Encoding UTF8 $deployLogPath
-        }
-
-        #톰캣 컨텍스트 재로드
-        function Reload-TomcatContext($contextPath) {
-            $tomcatManagerUrl = "http://localhost:$connectorPort/manager/text/reload?path=/$contextPath"
-            $username = $USER_NAME
-            $password = $USER_PASSWORD
-
-            $pair = "$username`:$password"
-            $encodedAuth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pair))
-
-            $headers = @{
-                Authorization = "Basic $encodedAuth"
-            }
-
-            try {
-                $response = Invoke-RestMethod -Uri $tomcatManagerUrl -Headers $headers -Method Get
-                Write-DeployLog "톰캣 컨텍스트 재로드(/$contextPath) : $response"
-            }
-            catch {
-                Write-DeployLog "톰캣 컨텍스트 재로드 실패(/$contextPath): $($_.Exception.Message)"
-            }
-        }
-
-        # ===== Java 컴파일 =====
-        $isBuilding = $false
-        $debounceTimer = New-Object Timers.Timer
-        $debounceTimer.Interval = 3000
-        $debounceTimer.AutoReset = $false
-        $debounceTimer.Enabled = $false
-
-        function Compile-Java {
-            if ($isBuilding) { return }
-            $isBuilding = $true
-            Write-DeployLog "[INFO] 컴파일 시작: $artifactId"
-
-            try {
-                Push-Location $WORKSPACE_PATH
-                $compileOutput = & $MAVEN_PATH compile -DskipTests -pl $artifactId -am -s $SETTINGS_XML_PATH 2>&1
-                $compileSuccess = $true
-
-                foreach ($line in $compileOutput) {
-                    Write-DeployLog "[INFO] [Maven] $line"
-                    if ($line -match 'COMPILATION ERROR' -or $line -match 'BUILD FAILURE') {
-                        $compileSuccess = $false
-                    }
-                }
-
-                if (-not $compileSuccess) {
-                    Write-DeployLog "[ERROR] 컴파일 실패: $artifactId - 반영을 중단합니다"
-                    return
-                }
-
-                Write-DeployLog "[INFO] 컴파일 완료: $artifactId"
-
-                # jar모듈은 모든 웹모듈에 의존성이 있다고 판단하고 모든 웹모듈을 톰캣 컨텍스트 재로드 한다
-                foreach ($contextName in $modules.Values) {
-                    Reload-TomcatContext $contextName
-                }
-            }
-            catch {
-                Write-DeployLog "[ERROR] 컴파일 실패: $artifactId - 오류: $($_.Exception.Message)"
-            }
-            finally {
-                Write-DeployLog ""
-                Pop-Location
-                $isBuilding = $false
-            }
-        }
-
-        # ===== Java 감시자 설정 =====
-        $javaWatcher = New-Object System.IO.FileSystemWatcher
-        $javaWatcher.Path = $sourceDir
-        $javaWatcher.Filter = "*.java"
-        $javaWatcher.IncludeSubdirectories = $true
-        $javaWatcher.EnableRaisingEvents = $true
-
-        Register-ObjectEvent -InputObject $debounceTimer -EventName Elapsed -Action {
-            Compile-Java
-        } | Out-Null
-
-        $onChanged = {
-            $changedFile = $Event.SourceEventArgs.FullPath
-            $changeType = $Event.SourceEventArgs.ChangeType
-
-            # 저장되지 않은 IntelliJ 임시 파일 무시
-            if ($changedFile -like "*.tmp" -or $changedFile -like "*___jb_tmp___*" -or $changedFile -like "*___jb_old___*") {
-                return
-            }
-
-            if (-not (Test-Path $changedFile)) {
-                Write-DeployLog "[WARN] changedFile 파일 없음: $changedFile"
-                return
-            }
-
-            Write-DeployLog "[DEBUG] Java 소스 변경 감지($changeType): $changedFile"
-            $debounceTimer.Stop()
-            $debounceTimer.Start()
-        }
-
-        Register-ObjectEvent $javaWatcher Changed -Action $onChanged | Out-Null
-        Register-ObjectEvent $javaWatcher Created -Action $onChanged | Out-Null
-        Register-ObjectEvent $javaWatcher Renamed -Action $onChanged | Out-Null
-
-        while ($true) {
-            Start-Sleep -Seconds 1
-        }
-    }
-
-    # 백그라운드로 감시 작업 시작
-    Start-Job -ScriptBlock $script -ArgumentList $artifactId, $sourceDir, $WORKSPACE_PATH, $MAVEN_PATH, $SETTINGS_XML_PATH, $logDir, $connectorPort, $modules, $USER_NAME, $USER_PASSWORD | Out-Null
-
-    Write-Host "[INFO] $artifactId 감시 등록 성공" -ForegroundColor Cyan
-}
-
 
 
 # ===== 모듈별 감시 설정 =====
@@ -730,7 +627,8 @@ foreach ($module in $modules.Keys) {
                 }
                 Write-DeployLog "[INFO] 컴파일 완료: $moduleName"
 
-                Reload-TomcatContext $contextName
+                #웹모듈별 context.xml에 reloadable="true" 옵션으로 설정하고 톰캣 재기동은 수동으로 하지않는다
+                #Reload-TomcatContext $contextName
             }
             catch {
                 Write-DeployLog "[ERROR] 컴파일 실패: $moduleName - 오류: $($_.Exception.Message)"
@@ -800,6 +698,9 @@ foreach ($module in $modules.Keys) {
         $mapperWatcher.Filter = "*.xml"
         $mapperWatcher.IncludeSubdirectories = $true
         $mapperWatcher.EnableRaisingEvents = $true
+        #mapperXml은 중복감지를 피하기위해 디바운싱 적용
+        $mapperLastEventTime = @{}
+        $mapperDebounceMilliseconds = 1000   # 1초 안에 또 오면 무시
 
         $xmlCopyAction = {
             $mapperPath = $Event.SourceEventArgs.FullPath
@@ -809,7 +710,24 @@ foreach ($module in $modules.Keys) {
                 return
             }
 
+            #디바운싱
+            $now = Get-Date
+            if ($mapperLastEventTime.ContainsKey($mapperPath)) {
+                $diff = ($now - $mapperLastEventTime[$mapperPath]).TotalMilliseconds
+                if ($diff -lt $mapperDebounceMilliseconds) {
+                    return
+                }
+            }
+            $mapperLastEventTime[$mapperPath] = $now
+
+            #target하위 경로에 mapperXml 복사
             Copy-MapperXML $mapperPath
+
+            #해당 웹모듈 재기동
+            if ($IsAutoMapperDeploy) {
+                Reload-TomcatContext $using:contextName
+            }
+
             Write-DeployLog ""
         }
 
@@ -828,9 +746,217 @@ foreach ($module in $modules.Keys) {
     Write-Host "[INFO] $module 감시 등록 성공" -ForegroundColor Cyan
 }
 
+# ===== jar 모듈 감시 설정 =====
+foreach ($artifactId in $moduleDependencies) {
+    $sourceDir = Join-Path $WORKSPACE_PATH "$artifactId\src\main\java"
+    $mapperDir = Join-Path $WORKSPACE_PATH "$artifactId\src\main\resources"
+    $targetMapperDir = Join-Path $WORKSPACE_PATH "$artifactId\target\classes"
+    $logDir = $deployLogDir
+
+    Write-Host "[INFO] $artifactId 감시 등록 중..." -ForegroundColor Cyan
+
+    # 백그라운드 감시 작업
+    $script = {
+        param($artifactId, $sourceDir, $mapperDir, $targetMapperDir, $WORKSPACE_PATH, $MAVEN_PATH, $SETTINGS_XML_PATH, $logDir, $connectorPort, $modules, $USER_NAME, $USER_PASSWORD)
+
+        #auto-deploy 로그 기록
+        function Write-DeployLog($message) {
+            $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            $datePart = Get-Date -Format "yyyy-MM-dd"
+            $deployLogFileName = "auto-deploy.$datePart.log"
+            $deployLogPath = Join-Path $logDir $deployLogFileName
+            "[$timestamp] $message" | Out-File -Append -Encoding UTF8 $deployLogPath
+        }
+
+        #톰캣 컨텍스트 재로드
+        function Reload-TomcatContext($contextPath) {
+            $tomcatManagerUrl = "http://localhost:$connectorPort/manager/text/reload?path=/$contextPath"
+            $username = $USER_NAME
+            $password = $USER_PASSWORD
+
+            $pair = "$username`:$password"
+            $encodedAuth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pair))
+
+            $headers = @{
+                Authorization = "Basic $encodedAuth"
+            }
+
+            try {
+                $response = Invoke-RestMethod -Uri $tomcatManagerUrl -Headers $headers -Method Get
+                Write-DeployLog "톰캣 컨텍스트 재로드(/$contextPath) : $response"
+            }
+            catch {
+                Write-DeployLog "톰캣 컨텍스트 재로드 실패(/$contextPath): $($_.Exception.Message)"
+            }
+        }
+
+        # ===== 매퍼XML 복사 함수 =====
+        function Copy-MapperXML($mapperPath) {
+            if (-not (Test-Path $mapperPath)) { return }
+
+            $relativePath = $mapperPath.Substring($mapperDir.Length).TrimStart('\')
+            $destinationPath = Join-Path $targetMapperDir $relativePath
+            $destinationDir = Split-Path $destinationPath
+
+            # 저장되지 않은 IntelliJ 임시 파일 무시
+            if ($mapperPath -like "*___jb_tmp___*" -or $mapperPath -like "*___jb_old___*" -or $mapperPath -like "*.tmp") {
+                return
+            }
+
+            Write-DeployLog "[INFO] 매퍼XML 배포 시작: $relativePath"
+
+            try {
+                if (-not (Test-Path $destinationDir)) {
+                    New-Item -ItemType Directory -Path $destinationDir -Force | Out-Null
+                }
+                Copy-Item -Path $mapperPath -Destination $destinationPath -Force
+                Write-DeployLog "[INFO] 매퍼XML 배포 완료: $relativePath -> $destinationPath"
+
+                #MapperXml에 수정이 있으면 톰캣 재기동을 해야 변경내역이 반영된다
+                if ($IsAutoMapperDeploy) {
+                    foreach ($contextName in $modules.Values) {
+                        Reload-TomcatContext $contextName
+                    }
+                }
+            }
+            catch {
+                Write-DeployLog "[ERROR] 매퍼XML 배포 실패: $relativePath - 오류: $($_.Exception.Message)"
+            }
+        }
+
+        # ===== Java 컴파일 =====
+        $isBuilding = $false
+        $debounceTimer = New-Object Timers.Timer
+        $debounceTimer.Interval = 3000
+        $debounceTimer.AutoReset = $false
+        $debounceTimer.Enabled = $false
+
+        function Compile-Java {
+            if ($isBuilding) { return }
+            $isBuilding = $true
+            Write-DeployLog "[INFO] 컴파일 시작: $artifactId"
+
+            try {
+                Push-Location $WORKSPACE_PATH
+                $compileOutput = & $MAVEN_PATH compile -DskipTests -pl $artifactId -am -s $SETTINGS_XML_PATH 2>&1
+                $compileSuccess = $true
+
+                foreach ($line in $compileOutput) {
+                    Write-DeployLog "[INFO] [Maven] $line"
+                    if ($line -match 'COMPILATION ERROR' -or $line -match 'BUILD FAILURE') {
+                        $compileSuccess = $false
+                    }
+                }
+
+                if (-not $compileSuccess) {
+                    Write-DeployLog "[ERROR] 컴파일 실패: $artifactId - 반영을 중단합니다"
+                    return
+                }
+
+                Write-DeployLog "[INFO] 컴파일 완료: $artifactId"
+
+                #웹모듈별 context.xml에 reloadable="true" 옵션으로 설정하고 톰캣 재기동은 수동으로 하지않는다
+                #일반적으로 jar모듈은 모든 웹모듈에 의존성이 있으므로 reloadable="true"로 설정하지않으면 모든 웹모듈을 재기동해야한다
+                #foreach ($contextName in $modules.Values) {
+                #    Reload-TomcatContext $contextName
+                #}
+            }
+            catch {
+                Write-DeployLog "[ERROR] 컴파일 실패: $artifactId - 오류: $($_.Exception.Message)"
+            }
+            finally {
+                Write-DeployLog ""
+                Pop-Location
+                $isBuilding = $false
+            }
+        }
+
+        # ===== Java 감시자 설정 =====
+        $javaWatcher = New-Object System.IO.FileSystemWatcher
+        $javaWatcher.Path = $sourceDir
+        $javaWatcher.Filter = "*.java"
+        $javaWatcher.IncludeSubdirectories = $true
+        $javaWatcher.EnableRaisingEvents = $true
+
+        Register-ObjectEvent -InputObject $debounceTimer -EventName Elapsed -Action {
+            Compile-Java
+        } | Out-Null
+
+        $onChanged = {
+            $changedFile = $Event.SourceEventArgs.FullPath
+            $changeType = $Event.SourceEventArgs.ChangeType
+
+            # 저장되지 않은 IntelliJ 임시 파일 무시
+            if ($changedFile -like "*.tmp" -or $changedFile -like "*___jb_tmp___*" -or $changedFile -like "*___jb_old___*") {
+                return
+            }
+
+            if (-not (Test-Path $changedFile)) {
+                Write-DeployLog "[WARN] changedFile 파일 없음: $changedFile"
+                return
+            }
+
+            Write-DeployLog "[DEBUG] Java 소스 변경 감지($changeType): $changedFile"
+            $debounceTimer.Stop()
+            $debounceTimer.Start()
+        }
+
+        Register-ObjectEvent $javaWatcher Changed -Action $onChanged | Out-Null
+        Register-ObjectEvent $javaWatcher Created -Action $onChanged | Out-Null
+        Register-ObjectEvent $javaWatcher Renamed -Action $onChanged | Out-Null
+
+
+        # ===== 매퍼XML 감시자 설정 =====
+        $mapperWatcher = New-Object System.IO.FileSystemWatcher
+        $mapperWatcher.Path = $mapperDir
+        $mapperWatcher.Filter = "*.xml"
+        $mapperWatcher.IncludeSubdirectories = $true
+        $mapperWatcher.EnableRaisingEvents = $true
+        $mapperLastEventTime = @{}
+        $mapperDebounceMilliseconds = 1000   # 1초 안에 또 오면 무시
+
+        $xmlCopyAction = {
+            $mapperPath = $Event.SourceEventArgs.FullPath
+
+            # 저장되지 않은 IntelliJ 임시 파일 무시
+            if ($mapperPath -like "*___jb_tmp___*" -or $mapperPath -like "*___jb_old___*" -or $mapperPath -like "*.tmp") {
+                return
+            }
+
+            #디바운싱
+            $now = Get-Date
+            if ($mapperLastEventTime.ContainsKey($mapperPath)) {
+                $diff = ($now - $mapperLastEventTime[$mapperPath]).TotalMilliseconds
+                if ($diff -lt $mapperDebounceMilliseconds) {
+                    return
+                }
+            }
+            $mapperLastEventTime[$mapperPath] = $now
+
+            Copy-MapperXML $mapperPath
+            Write-DeployLog ""
+        }
+
+        Register-ObjectEvent $mapperWatcher Changed -Action $xmlCopyAction | Out-Null
+        Register-ObjectEvent $mapperWatcher Created -Action $xmlCopyAction | Out-Null
+        Register-ObjectEvent $mapperWatcher Renamed -Action $xmlCopyAction | Out-Null
+
+        # ===== 루프 유지 =====
+        while ($true) {
+            Start-Sleep -Seconds 1
+        }
+    }
+
+    # 백그라운드로 감시 작업 시작
+    Start-Job -ScriptBlock $script -ArgumentList $artifactId, $sourceDir, $mapperDir, $targetMapperDir, $WORKSPACE_PATH, $MAVEN_PATH, $SETTINGS_XML_PATH, $logDir, $connectorPort, $modules, $USER_NAME, $USER_PASSWORD | Out-Null
+
+    Write-Host "[INFO] $artifactId 감시 등록 성공" -ForegroundColor Cyan
+}
+
 Write-Host ""
 Write-Host "[INFO] 백그라운드에서 모든 모듈에 대한 실시간 감시가 시작되었습니다" -ForegroundColor Cyan
 Write-Host "[INFO] 변경이 감지되면 자동으로 컴파일 및 배포됩니다" -ForegroundColor Cyan
+}
 
 #============================================================================================
 #============================================================================================
@@ -859,10 +985,10 @@ Write-Host "Hello Tomcat..!!! Made by hsyoon" -ForegroundColor Green
 Write-Host @"
 ${green} _
 ${green}| |
-${green}| |__   ___  _   _   ___    ___   _ __      ${gray}▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-${green}| '_ \ / __|| | | | / _ \  / _ \ | '_ \     ${gray}█░░░░░░░░▀█▄▀▄▀██████░▀█▄▀▄▀██████░
-${green}| | | |\__ \| |_| || (_) || (_) || | | |    ${gray}░░░░░░░░░░░▀█▄█▄███▀░░░ ▀██▄█▄███▀░
-${green}|_| |_||___/ \__, | \___/  \___/ |_| |_|
+${green}| |__   ___  _   _   ___    ___   _ __      ${gray}   ___ _____   _(_)___(_) ___  _ __
+${green}| '_ \ / __|| | | | / _ \  / _ \ | '_ \     ${gray}  / __/ _ \ \ / / / __| |/ _ \| '_ \
+${green}| | | |\__ \| |_| || (_) || (_) || | | |    ${gray} | (_| (_) \ V /| \__ \ | (_) | | | |
+${green}|_| |_||___/ \__, | \___/  \___/ |_| |_|    ${gray}  \___\___/ \_/ |_|___/_|\___/|_| |_|
 ${green}              __/ |
 ${green}             |___/${reset}
 "@
@@ -874,7 +1000,7 @@ Write-Host ""
 Write-Host ""
 
 
-Start-Sleep -Seconds 5
+Start-Sleep -Seconds 2
 
 # ===== Tomcat 시작 =====
 Write-Host "[INFO] 디버깅을하려면 IDE내 debugger를 구성하세요" -ForegroundColor Cyan
@@ -890,20 +1016,58 @@ Write-Host ""
 Write-Host ""
 Write-Host ""
 Write-Host ""
+
+$ESC = [char]27
+$colors = @{
+    FATAL = "$ESC[35m"
+    ERROR = "$ESC[31m"
+    WARN  = "$ESC[33m"
+    INFO  = "$ESC[32m"
+    DEBUG = "$ESC[36m"
+    TRACE = "$ESC[90m"
+}
+$RESET = "$ESC[0m"
+# 현재 유지할 색 (멀티라인용)
+$currentColor = ""
+# 로그 시작 패턴 (HH:mm:SS.000 형식)
+$logStartPattern = "^\d{2}:\d{2}:\d{2}\.\d{3}"
+
 & "$TOMCAT_PATH\bin\catalina.bat" jpda run | ForEach-Object {
-    if ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} FATAL") {
-        Write-Host $_ -ForegroundColor Magenta
-    } elseif ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} ERROR") {
-        Write-Host $_ -ForegroundColor Red
-    } elseif ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} WARN") {
-        Write-Host $_ -ForegroundColor Yellow
-    } elseif ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} INFO") {
-        Write-Host $_ -ForegroundColor Green
-    } elseif ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} DEBUG") {
-        Write-Host $_ -ForegroundColor Cyan
-    } elseif ($_ -match "^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} TRACE") {
-        Write-Host $_ -ForegroundColor DarkGray
-    } else {
-        Write-Host $_
+
+    $line = $_
+
+    # 로그 시작 줄인지 확인
+    if ($line -match $logStartPattern) {
+
+        # 기본값 초기화
+        $currentColor = ""
+
+        # ERROR는 그 줄만 색 적용
+        if ($line -match "\bERROR\b") {
+            Write-Host "$($colors["ERROR"])$line$RESET"
+            return
+        }
+
+        # 그 외 레벨은 상태 유지
+        foreach ($level in $colors.Keys) {
+
+            if ($level -ne "ERROR" -and $line -match "\b$level\b") {
+                $currentColor = $colors[$level]
+                Write-Host "$currentColor$line$RESET"
+                return
+            }
+        }
+
+        # 레벨 없는 로그
+        Write-Host $line
+    }
+    else {
+        # 멀티라인(SQL 등)은 해당 범위 로그 모두 색 적용
+        if ($currentColor -ne "") {
+            Write-Host "$currentColor$line$RESET"
+        }
+        else {
+            Write-Host $line
+        }
     }
 }
