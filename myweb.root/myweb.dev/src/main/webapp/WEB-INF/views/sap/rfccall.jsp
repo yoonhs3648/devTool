@@ -885,7 +885,7 @@
         // row 많으면 삭제 (뒤에서부터)
         $rows = $target.find('input[name="tbParamKey"]');
         while ($rows.length > targetCount) {
-            $rows.closest('tr').remove();
+            $rows.last().closest('tr').remove();
             $rows = $target.find('input[name="tbParamKey"]');
         }
 
